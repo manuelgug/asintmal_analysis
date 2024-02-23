@@ -71,7 +71,8 @@ draw_scatterplot <- function(x, y, df, scale_data = FALSE) {
     geom_point() +
     geom_text(aes(label = paste("Correlation =", round(corr, 2)), x = Inf, y = -Inf),
               hjust = 1, vjust = 0, size = 4) +
-    labs(title = paste("Scatterplot of", x, "vs", y))
+    labs(title = paste(x, "vs", y))+
+    theme_minimal()
   
   return(p)
 }
@@ -81,10 +82,15 @@ plot_pcr_hrp <- draw_scatterplot("all_pcr", "all_hrp", df_corr, scale_data = TRU
 plot_pcr_pfldh <- draw_scatterplot("all_pcr", "all_pfldh", df_corr, scale_data = TRUE)
 plot_hrp_pfldh <- draw_scatterplot("all_hrp", "all_pfldh", df_corr, scale_data = TRUE)
 
-# Display the plots
-print(plot_pcr_hrp)
-print(plot_pcr_pfldh)
-print(plot_hrp_pfldh)
+# Create the plot list by concatenating the plots
+plot_list <- list(plot_pcr_hrp, plot_pcr_pfldh, plot_hrp_pfldh)
+
+# Arrange plots in a grid
+grid_plot <- cowplot::plot_grid(plotlist = plot_list, ncol = 1)
+
+# # Save the grid plot as a PNG file with the name of the function input
+ggsave("metrics_correlations.png", grid_plot, width = 10, height = 16, dpi = 300, bg ="white")
+
 
 
 ####################################
@@ -92,42 +98,42 @@ print(plot_hrp_pfldh)
 ####################################
 
 # CALCULATE PERCENTAGE CHANGE BETWEEN SAMPLINGS
-compute_percentage_changes <- function(df) {
-  # Initialize an empty dataframe to store the percentage_changes
-  df_percentage_changes <- data.frame(matrix(ncol = 0, nrow = nrow(df)))
+compute_pchs <- function(df) {
+  # Initialize an empty dataframe to store the pchs
+  df_pchs <- data.frame(matrix(ncol = 0, nrow = nrow(df)))
   
   # Iterate over column indices to compute percentage change between time points
   for (i in 1:(ncol(df) - 1)) {
     for (j in (i + 1):ncol(df)) {
-      # Compute the percentage_change between the columns
-      percentage_change <- ((df[[j]] - df[[i]]) / df[[i]]) * 100
+      # Compute the pch between the columns
+      pch <- ((df[[j]] - df[[i]]) / df[[i]]) * 100
       
-      # Create column name for the percentage_change
-      col_name <- paste("percentage_change", names(df)[i], names(df)[j], sep = "_")
+      # Create column name for the pch
+      col_name <- paste("pch", names(df)[i], names(df)[j], sep = "_")
       
-      # Add percentage_change to the dataframe
-      df_percentage_changes[[col_name]] <- percentage_change
+      # Add pch to the dataframe
+      df_pchs[[col_name]] <- pch
     }
   }
   
-  return(df_percentage_changes)
+  return(df_pchs)
 }
 
 # compute changes
-df_pcr_percentage_changes <- compute_percentage_changes(df_pcr)
-df_hrp_percentage_changes <- compute_percentage_changes(df_hrp)
-df_pfldh_percentage_changes <- compute_percentage_changes(df_pfldh)
+df_pcr_pchs <- compute_pchs(df_pcr)
+df_hrp_pchs <- compute_pchs(df_hrp)
+df_pfldh_pchs <- compute_pchs(df_pfldh)
 
 
 ## FULL KMEANS ANALYSIS
 perform_kmeans_analysis <- function(DF) {
   # Remove NA rows
-  df_percentage_changes_complete_cases <- DF[complete.cases(DF),]
+  df_pchs_complete_cases <- DF[complete.cases(DF),]
   
   # Identify columns containing infinite values
-  cols_with_inf <- sapply(df_percentage_changes_complete_cases, function(x) any(is.infinite(x)))
-  df_percentage_changes_corrected <- df_percentage_changes_complete_cases
-  df_percentage_changes_corrected[cols_with_inf] <- lapply(df_percentage_changes_corrected[cols_with_inf], function(x) replace(x, is.infinite(x), 1))
+  cols_with_inf <- sapply(df_pchs_complete_cases, function(x) any(is.infinite(x)))
+  df_pchs_corrected <- df_pchs_complete_cases
+  df_pchs_corrected[cols_with_inf] <- lapply(df_pchs_corrected[cols_with_inf], function(x) replace(x, is.infinite(x), 1))
   
   # Define a range of k values to explore
   k_values <- 1:10  # You can adjust the range as needed
@@ -138,7 +144,7 @@ perform_kmeans_analysis <- function(DF) {
   # Perform k-means clustering for each k and calculate WSS
   for (i in 1:length(k_values)) {
     k <- k_values[i]
-    kmeans_result <- kmeans(df_percentage_changes_corrected[,c(1,4,6)], centers = k, nstart = 100)
+    kmeans_result <- kmeans(df_pchs_corrected[,c(1,4,6)], centers = k, nstart = 100)
     wss[i] <- kmeans_result$tot.withinss
   }
   
@@ -166,10 +172,14 @@ perform_kmeans_analysis <- function(DF) {
   # Perform k-means clustering and plot for each optimal k
   for (k in optimal_k) {
     # Perform k-means clustering with the optimal k
-    kmeans_result <- kmeans(df_percentage_changes_corrected[,c(1,4,6)], centers = k, nstart = 10000, iter.max = 10000)
+    set.seed(69)
+    kmeans_result <- kmeans(df_pchs_corrected[,c(1,4,6)], centers = k, nstart = 10000, iter.max = 10000)
+    
+    # Add cluster assignment as a new column to df_pchs_corrected
+    df_pchs_corrected[[paste0("cluster_", k)]] <- kmeans_result$cluster
     
     # Plot kmeans clustering
-    kmeans_plot <- fviz_cluster(kmeans_result, data = df_percentage_changes_corrected[,c(1,4,6)],
+    kmeans_plot <- fviz_cluster(kmeans_result, data = df_pchs_corrected[,c(1,4,6)],
                                 palette = c("pink2", "#00AFBB", "#E7B800", "orange4", "limegreen", "darkviolet"), 
                                 geom = "point",
                                 ellipse.type = "convex", 
@@ -182,7 +192,7 @@ perform_kmeans_analysis <- function(DF) {
     centers_df$Cluster <- rownames(centers_df)
     
     # Define the desired order of variables
-    desired_order <- c("percentage_change_day7_day14", "percentage_change_day14_day21", "percentage_change_day21_day28")
+    desired_order <- c("pch_day7_day14", "pch_day14_day21", "pch_day21_day28")
     
     # Reshape the dataframe to long format
     centers_df_long <- pivot_longer(centers_df, -Cluster, names_to = "Variable", values_to = "Value")
@@ -196,8 +206,9 @@ perform_kmeans_analysis <- function(DF) {
       scale_color_manual(values = c("pink2", "#00AFBB", "#E7B800", "orange4", "limegreen", "darkviolet")) +
       labs(title = paste("Cluster Centers (k =", k, ")"),
            x = "",
-           y = "Relative Change in Parasite Density")+
-      theme_minimal()
+           y = "Relative Change in Parasite Density") +
+      theme_minimal() +
+      theme(axis.text.x = element_text(angle = 0, hjust = 0.5))
     
     # Add plots to the list
     plot_list[[length(plot_list) + 1]] <- kmeans_plot
@@ -212,10 +223,45 @@ perform_kmeans_analysis <- function(DF) {
   ggsave(filename, grid_plot, width = 12, height = 16, dpi = 300, bg ="white")
   
   # Return the elbow plot and the grid plot
-  return(list(elbow_plot, grid_plot))
+  return(df_pchs_corrected)
 }
 
 # perform analysis
-perform_kmeans_analysis(df_pcr_percentage_changes)
-perform_kmeans_analysis(df_hrp_percentage_changes)
-perform_kmeans_analysis(df_pfldh_percentage_changes)
+clusters_pcr <- perform_kmeans_analysis(df_pcr_pchs)
+clusters_hrp <- perform_kmeans_analysis(df_hrp_pchs)
+clusters_pfldh <- perform_kmeans_analysis(df_pfldh_pchs)
+
+#output cluster labels
+merge_clusters_with_df <- function(df, clusters_pcr) {
+  # Extract columns with the substring "cluster_" from clusters_pcr
+  cluster_cols <- grep("cluster_", names(clusters_pcr), value = TRUE)
+  
+  # Merge the selected columns from clusters_pcr with df based on row names
+  merged_df <- merge(df, clusters_pcr[, cluster_cols], by.x = 0, by.y = "row.names", all.x = TRUE)
+  
+  # Rename the row names column
+  rownames(merged_df) <- merged_df$Row.names
+  
+  # Remove the redundant column
+  merged_df <- merged_df[, -1]
+  
+  # If there are no matches, replace missing values with NA
+  merged_df[is.na(merged_df)] <- NA
+  
+  # Convert row names to numeric and order them
+  rownames_numeric <- as.numeric(rownames(merged_df))
+  merged_df <- merged_df[order(rownames_numeric), ]
+  
+  return(merged_df)
+}
+
+# output cluster labels for each sample
+clusters_pcr_merged_df <- merge_clusters_with_df(df, clusters_pcr)
+write.csv(clusters_pcr_merged_df, "clusters_pcr_merged_df.csv")
+
+clusters_hrp_merged_df <- merge_clusters_with_df(df, clusters_hrp)
+write.csv(clusters_hrp_merged_df, "clusters_hrp_merged_df.csv")
+
+clusters_pfldh_merged_df <- merge_clusters_with_df(df, clusters_pfldh)
+write.csv(clusters_pfldh_merged_df, "clusters_pfldh_merged_df.csv")
+
