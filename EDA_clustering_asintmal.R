@@ -106,7 +106,7 @@ compute_pchs <- function(df) {
   for (i in 1:(ncol(df) - 1)) {
     for (j in (i + 1):ncol(df)) {
       # Compute the pch between the columns
-      pch <- ((df[[j]] - df[[i]]) / df[[i]]) * 100
+      pch <- ((df[[j]] - df[[i]]) / df[[i]]) * 100 #alternative: log(df[[j]] / df[[i]])
       
       # Create column name for the pch
       col_name <- paste("pch", names(df)[i], names(df)[j], sep = "_")
@@ -267,5 +267,23 @@ write.csv(clusters_pfldh_merged_df, "clusters_pfldh_merged_df.csv")
 
 
 #TODO:
-  # 1) CAMBIAR PERCENTAGE CHANGE POR RATE OF CHANGE? es que sólo puede disminuir 99%, pero aumentar infinito%, lo que dificulta interpretar
+  # 1) CAMBIAR PERCENTAGE CHANGE POR RATE OF CHANGE? es que sólo puede disminuir 99%, pero aumentar infinito%, lo que dificulta interpretar. weighted percentage change (like, multiplying the percentage change times the parasite density?? maybe this takes into account also densities huh...)
   # 2) TRATAMIENTO DE NA: medias de otros datos? a qué trayectoria se parecen más según los datos doisponibles?
+
+
+#lo sigueinte está mal. no considera el priemr tiempo, es diferente para éste approach. habría que rehacer la función
+# perform analysis WITHOUT ANY FORMULA OR TRANSFORMATION
+df_pcr_pchs$pch_day7_day14 <- df_pcr$day14
+df_pcr_pchs$pch_day14_day21 <- df_pcr$day21
+df_pcr_pchs$pch_day21_day28 <- df_pcr$day28
+clusters_pcr <- perform_kmeans_analysis(df_pcr_pchs)
+
+df_hrp_pchs$pch_day7_day14 <- df_hrp$day14
+df_hrp_pchs$pch_day14_day21 <- df_hrp$day21
+df_hrp_pchs$pch_day21_day28 <- df_hrp$day28
+clusters_hrp <- perform_kmeans_analysis(df_hrp_pchs)
+
+df_pfldh_pchs$pch_day7_day14 <- df_pfldh$day14
+df_pfldh_pchs$pch_day14_day21 <- df_pfldh$day21
+df_pfldh_pchs$pch_day21_day28 <- df_pfldh$day28
+clusters_pfldh <- perform_kmeans_analysis(df_pfldh_pchs)
