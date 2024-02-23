@@ -265,3 +265,7 @@ write.csv(clusters_hrp_merged_df, "clusters_hrp_merged_df.csv")
 clusters_pfldh_merged_df <- merge_clusters_with_df(df, clusters_pfldh)
 write.csv(clusters_pfldh_merged_df, "clusters_pfldh_merged_df.csv")
 
+
+#TODO:
+  # 1) CAMBIAR PERCENTAGE CHANGE POR RATE OF CHANGE? es que sólo puede disminuir 99%, pero aumentar infinito%, lo que dificulta interpretar
+  # 2) TRATAMIENTO DE NA: medias de otros datos? a qué trayectoria se parecen más según los datos doisponibles?
