@@ -4,8 +4,13 @@ library(ggpubr)
 library(factoextra)
 library(tidyr)
 
-df <- read.csv("densities_visits.csv")
+df <- readxl::read_excel("DB_Manuel_25Feb24.xls")
+df <- as.data.frame(df)
 
+alfredo_labels <- df[,1:7]
+
+#remove alfredo's labels
+df <- df[,c(-1:-7)]
 
 ###--------------------------------------APPROACH 1: CLUSTERING---------------------------------------------
 
@@ -137,7 +142,7 @@ perform_kmeans_analysis <- function(DF) {
   
   
   # Select the optimal number of clusters based on the elbow plot
-  optimal_k <- 2:6
+  optimal_k <- 2:8
   
   # Create an empty list to store plots
   plot_list <- list()
@@ -196,7 +201,7 @@ perform_kmeans_analysis <- function(DF) {
   
   # # Save the grid plot as a PNG file with the name of the function input
   filename <- paste(gsub(" ", "_", deparse(substitute(DF))), "_", "kmeans_plot", ".png", sep="")
-  ggsave(filename, grid_plot, width = 16, height = 24, dpi = 300, bg ="white")
+  ggsave(filename, grid_plot, width = 16, height = 32, dpi = 300, bg ="white")
   
   # Return the elbow plot and the grid plot
   return(df_pchs_corrected)
@@ -348,3 +353,81 @@ print(stats_hrp_long)
 
 
 ###--------------------------------------APPROACH 2: THRESHOLDS (distributions of counts for each measurement-----------------------------------
+
+#histograms of counts for each metric
+
+#df_pfldh
+counts_pfldh <- na.omit(c(df_pfldh$day7,df_pfldh$day14, df_pfldh$day21, df_pfldh$day28))
+
+# Summary of counts_pcr
+summary_counts_pfldh <- summary(counts_pfldh)
+
+# Create histogram
+histogram <- hist(counts_pfldh, plot = FALSE)
+
+# Convert histogram to data frame
+hist_data <- data.frame(
+  count = histogram$counts,
+  breaks = histogram$mids
+)
+
+# Create ggplot
+ggplot(hist_data, aes(x = breaks, y = count)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black") +
+  labs(x = "Value", y = "Frequency", title = "Histogram of counts_pfldh") +
+  theme_minimal() +
+  # Adding ablines for summary components
+  geom_vline(xintercept = summary_counts_pfldh[2:5], color = c("blue", "green", "red", "purple"))+
+  annotate("text", x = summary_counts_pfldh[2:5], y = 0, label = names(summary_counts_pfldh)[2:5], vjust = -0.5)
+
+
+
+#df_hrp
+counts_hrp <- na.omit(c(df_hrp$day7,df_hrp$day14, df_hrp$day21, df_hrp$day28))
+
+# Summary of counts_pcr
+summary_counts_hrp <- summary(counts_hrp)
+
+# Create histogram
+histogram <- hist(counts_hrp, plot = FALSE)
+
+# Convert histogram to data frame
+hist_data <- data.frame(
+  count = histogram$counts,
+  breaks = histogram$mids
+)
+
+# Create ggplot
+ggplot(hist_data, aes(x = breaks, y = count)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black") +
+  labs(x = "Value", y = "Frequency", title = "Histogram of counts_hrp") +
+  theme_minimal() +
+  # Adding ablines for summary components
+  geom_vline(xintercept = summary_counts_hrp[2:5], color = c("blue", "green", "red", "purple"))+
+  annotate("text", x = summary_counts_hrp[2:5], y = 0, label = names(summary_counts_hrp)[2:5], vjust = -0.5)
+
+
+#df_pcr
+counts_pcr <- na.omit(c(df_pcr$day7,df_pcr$day14, df_pcr$day21, df_pcr$day28))
+
+# Summary of counts_pcr
+summary_counts_pcr <- summary(counts_pcr)
+
+# Create histogram
+histogram <- hist(counts_pcr, plot = FALSE)
+
+# Convert histogram to data frame
+hist_data <- data.frame(
+  count = histogram$counts,
+  breaks = histogram$mids
+)
+
+# Create ggplot
+ggplot(hist_data, aes(x = breaks, y = count)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black") +
+  labs(x = "Value", y = "Frequency", title = "Histogram of counts_pcr") +
+  theme_minimal() +
+  # Adding ablines for summary components
+  geom_vline(xintercept = summary_counts_pcr[2:5], color = c("blue", "green", "red", "purple"))+
+  annotate("text", x = summary_counts_pcr[2:5], y = 0, label = names(summary_counts_pcr)[2:5], vjust = -0.5)
+
