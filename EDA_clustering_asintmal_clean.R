@@ -116,7 +116,7 @@ perform_kmeans_analysis <- function(DF) {
   df_pchs_corrected[cols_with_inf] <- lapply(df_pchs_corrected[cols_with_inf], function(x) replace(x, is.infinite(x), 1))
   
   # Define a range of k values to explore
-  k_values <- 1:10  # You can adjust the range as needed
+  k_values <- 1:20  # You can adjust the range as needed
   
   # Initialize a vector to store the total within-cluster sum of squares (WSS) for each k
   wss <- numeric(length(k_values))
@@ -143,7 +143,7 @@ perform_kmeans_analysis <- function(DF) {
   
   
   # Select the optimal number of clusters based on the elbow plot
-  optimal_k <- 2:8
+  optimal_k <- 2:10
   
   # Create an empty list to store plots
   plot_list <- list()
@@ -161,7 +161,7 @@ perform_kmeans_analysis <- function(DF) {
     
     # Plot kmeans clustering
     kmeans_plot <- fviz_cluster(kmeans_result, data = df_pchs_corrected[, 1:4],
-                                palette = c("pink2", "#00AFBB", "#E7B800", "orange4", "limegreen", "darkviolet", "red2", "orange"), 
+                                palette = c("pink2", "#00AFBB", "#E7B800", "orange4", "limegreen", "darkviolet", "red2", "orange", "yellow2", "grey54"), 
                                 geom = "point",
                                 ellipse.type = "convex", 
                                 ggtheme = theme_bw()) +
@@ -185,7 +185,7 @@ perform_kmeans_analysis <- function(DF) {
     # Plot the line plot
     line_plot <- ggplot(centers_df_long, aes(x = Variable, y = Value, group = Cluster, color = Cluster)) +
       geom_line(linewidth = 1) +
-      scale_color_manual(values = c("pink2", "#00AFBB", "#E7B800", "orange4", "limegreen", "darkviolet", "red2", "orange")) +
+      scale_color_manual(values = c("pink2", "#00AFBB", "#E7B800", "orange4", "limegreen", "darkviolet", "red2", "orange", "yellow2", "grey54")) +
       labs(title = paste("Cluster Centers (k =", k, ")"),
            x = "",
            y = "Relative Change in Parasite Density") +
@@ -250,6 +250,14 @@ write.csv(clusters_hrp_merged_df, "clusters_hrp_merged_df_raw_data.csv")
 clusters_pfldh_merged_df <- merge_clusters_with_df(df, clusters_pfldh)
 write.csv(clusters_pfldh_merged_df, "clusters_pfldh_merged_df_raw_data.csv")
 
+## igual y hasta aquí es suficiente.
+
+#### DONE! ####
+
+
+
+
+
 
 ########################################
 ### CALCULATE STATS FOR EACH CLUSTER ###
@@ -288,14 +296,6 @@ names(stats_pcr) <- cluster_cols_pcr
 
 stats_pfldh <- lapply(cluster_cols_pfldh, function(col) calculate_stats(clusters_pfldh, col))
 names(stats_pfldh) <- cluster_cols_pfldh
-
-
-
-
-
-
-
-
 
 
 
@@ -491,6 +491,7 @@ all_trajectories <- all_trajectories[rows_without_na_pattern, ]
 
 # output
 write.csv(all_trajectories, "thresholds_all_trajectories.csv")
+
 
 
 #line plots
