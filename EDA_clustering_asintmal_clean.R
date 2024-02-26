@@ -127,6 +127,7 @@ perform_kmeans_analysis <- function(DF) {
   # Perform k-means clustering for each k and calculate WSS
   for (i in 1:length(k_values)) {
     k <- k_values[i]
+    set.seed(69)
     kmeans_result <- kmeans(df_pchs_corrected, centers = k, nstart = 100)
     wss[i] <- kmeans_result$tot.withinss
     # Calculate silhouette scores
