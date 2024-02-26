@@ -177,6 +177,9 @@ perform_kmeans_analysis <- function(DF) {
     set.seed(69)
     kmeans_result <- kmeans(df_pchs_corrected, centers = k, nstart = 10000, iter.max = 10000)
     
+    # Add cluster assignment as a new column to df_pchs_corrected
+    df_pchs_corrected[[paste0("cluster_", k)]] <- kmeans_result$cluster
+    
     wss <- kmeans_result$betweenss / kmeans_result$totss * 100
     
     # Calculate silhouette scores
@@ -215,12 +218,12 @@ perform_kmeans_analysis <- function(DF) {
       scale_color_manual(values = c("pink2", "#00AFBB", "#E7B800", "orange4", "limegreen", "darkviolet", "red2", "orange", "yellow2", "grey54", "black")) +
       labs(title = paste("Cluster Centers (k =", k, ")"),
            x = "",
-           y = "Relative Change in Parasite Density") +
+           y = "Parasite Density") +
       theme_minimal() +
       theme(axis.text.x = element_text(angle = 0, hjust = 0.5))
     
     # Add silhouette scores to the line plot title
-    line_plot <- line_plot + labs(title = paste("Cluster Centers (k =", k, ") \n Average Silhouette Width =", round(avg_sil, 2)))
+    line_plot <- line_plot + labs(title = paste("Cluster Centers (k =", k, ") \nAverage Silhouette Width =", round(avg_sil, 2)))
     
     # Add plots to the list
     plot_list[[length(plot_list) + 1]] <- kmeans_plot
