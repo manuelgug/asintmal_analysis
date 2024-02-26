@@ -187,7 +187,7 @@ perform_kmeans_analysis <- function(DF) {
     
     # Plot kmeans clustering
     kmeans_plot <- fviz_cluster(kmeans_result, data = df_pchs_corrected[, 1:4],
-                                palette = c("pink2", "#00AFBB", "#E7B800", "orange4", "limegreen", "darkviolet", "red2", "orange", "yellow2", "grey54"), 
+                                palette = c("pink2", "#00AFBB", "#E7B800", "orange4", "limegreen", "darkviolet", "red2", "orange", "yellow2", "grey54", "black"), 
                                 geom = "point",
                                 ellipse.type = "convex", 
                                 ggtheme = theme_bw()) +
@@ -211,7 +211,7 @@ perform_kmeans_analysis <- function(DF) {
     # Plot the line plot
     line_plot <- ggplot(centers_df_long, aes(x = Variable, y = Value, group = Cluster, color = Cluster)) +
       geom_line(linewidth = 1) +
-      scale_color_manual(values = c("pink2", "#00AFBB", "#E7B800", "orange4", "limegreen", "darkviolet", "red2", "orange", "yellow2", "grey54")) +
+      scale_color_manual(values = c("pink2", "#00AFBB", "#E7B800", "orange4", "limegreen", "darkviolet", "red2", "orange", "yellow2", "grey54", "black")) +
       labs(title = paste("Cluster Centers (k =", k, ")"),
            x = "",
            y = "Relative Change in Parasite Density") +
