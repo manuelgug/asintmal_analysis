@@ -6,6 +6,7 @@ library(tidyr)
 
 df <- readxl::read_excel("DB_Manuel_25Feb24.xls")
 df <- as.data.frame(df)
+rownames(df) <- df$asint2
 
 alfredo_labels <- df[,1:7]
 
@@ -35,13 +36,13 @@ pfldh_combined <- t(pfldh_combined)
 
 # Create dataframes from the concatenated matrices
 df_pcr <- as.data.frame(pcr_combined, stringsAsFactors = FALSE)
-rownames(df_pcr) <- df$asint2
+rownames(df_pcr) <- rownames(df)
 colnames(df_pcr) <- c("day7", "day14", "day21", "day28")
 df_hrp <- as.data.frame(hrp_combined, stringsAsFactors = FALSE)
-rownames(df_hrp) <- df$asint2
+rownames(df_hrp) <- rownames(df)
 colnames(df_hrp) <- c("day7", "day14", "day21", "day28")
 df_pfldh <- as.data.frame(pfldh_combined, stringsAsFactors = FALSE)
-rownames(df_pfldh) <- df$asint2
+rownames(df_pfldh) <- rownames(df)
 colnames(df_pfldh) <- c("day7", "day14", "day21", "day28")
 
 
@@ -211,11 +212,6 @@ perform_kmeans_analysis <- function(DF) {
 merge_clusters_with_df <- function(df, clusters_pcr) {
   # Extract columns with the substring "cluster_" from clusters_pcr
   cluster_cols <- grep("cluster_", names(clusters_pcr), value = TRUE)
-  
-  # shit code but works
-  if (any(grepl("ASIN", rownames(clusters_pcr)))){
-    rownames(df) <- df[,1]
-  }
   
   # Merge the selected columns from clusters_pcr with df based on row names
   merged_df <- merge(df, clusters_pcr[, cluster_cols], by.x = 0, by.y = "row.names", all.x = TRUE)
@@ -432,4 +428,40 @@ ggplot(hist_data, aes(x = breaks, y = count)) +
   # Adding ablines for summary components
   geom_vline(xintercept = summary_counts_pcr[2:5], color = c("blue", "green", "red", "purple"))+
   annotate("text", x = summary_counts_pcr[2:5], y = 0, label = names(summary_counts_pcr)[2:5], vjust = -0.5)
+
+
+#use 1st and 3rd quantile as thresholds
+pfldh_thresh <- summary_counts_pfldh[c("1st Qu.", "3rd Qu.")]
+hrp_thresh <- summary_counts_hrp[c("1st Qu.", "3rd Qu.")]
+pcr_thresh <- summary_counts_pcr[c("1st Qu.", "3rd Qu.")]
+
+# Apply the condition to the columns
+df_levels <- df %>%
+  mutate_at(vars(matches("pcr")), ~case_when(
+    is.na(.) ~ NA_character_,
+    . < pcr_thresh[1] ~ "L",
+    . > pcr_thresh[2] ~ "H",
+    TRUE ~ "M"
+  ))
+
+df_levels <- df_levels %>%
+  mutate_at(vars(matches("hrp")), ~case_when(
+    is.na(.) ~ NA_character_,
+    . < hrp_thresh[1] ~ "L",
+    . > hrp_thresh[2] ~ "H",
+    TRUE ~ "M"
+  ))
+
+df_levels <- df_levels %>%
+  mutate_at(vars(matches("pfldh")), ~case_when(
+    is.na(.) ~ NA_character_,
+    . < pfldh_thresh[1] ~ "L",
+    . > pfldh_thresh[2] ~ "H",
+    TRUE ~ "M"
+  ))
+
+df_final_thresolds <- merge(df, df_levels, by ="row.names")
+rownames(df_final_thresolds) <- df_final_thresolds$Row.names
+df_final_thresolds <- df_final_thresolds[,-1]
+
 
