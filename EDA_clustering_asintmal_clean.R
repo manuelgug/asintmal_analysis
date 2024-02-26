@@ -356,6 +356,7 @@ print(stats_hrp_long)
 
 #histograms of counts for each metric
 
+
 #df_pfldh
 counts_pfldh <- na.omit(c(df_pfldh$day7,df_pfldh$day14, df_pfldh$day21, df_pfldh$day28))
 
@@ -363,7 +364,7 @@ counts_pfldh <- na.omit(c(df_pfldh$day7,df_pfldh$day14, df_pfldh$day21, df_pfldh
 summary_counts_pfldh <- summary(counts_pfldh)
 
 # Create histogram
-histogram <- hist(counts_pfldh, plot = FALSE)
+histogram <- hist(counts_pfldh, plot = FALSE, breaks = 30)
 
 # Convert histogram to data frame
 hist_data <- data.frame(
@@ -373,7 +374,7 @@ hist_data <- data.frame(
 
 # Create ggplot
 ggplot(hist_data, aes(x = breaks, y = count)) +
-  geom_bar(stat = "identity", fill = "skyblue", color = "black") +
+  geom_bar(stat = "identity", fill = "gray", color = "gray") +
   labs(x = "Value", y = "Frequency", title = "Histogram of counts_pfldh") +
   theme_minimal() +
   # Adding ablines for summary components
@@ -389,7 +390,7 @@ counts_hrp <- na.omit(c(df_hrp$day7,df_hrp$day14, df_hrp$day21, df_hrp$day28))
 summary_counts_hrp <- summary(counts_hrp)
 
 # Create histogram
-histogram <- hist(counts_hrp, plot = FALSE)
+histogram <- hist(counts_hrp, plot = FALSE, breaks = 30)
 
 # Convert histogram to data frame
 hist_data <- data.frame(
@@ -399,12 +400,13 @@ hist_data <- data.frame(
 
 # Create ggplot
 ggplot(hist_data, aes(x = breaks, y = count)) +
-  geom_bar(stat = "identity", fill = "skyblue", color = "black") +
+  geom_bar(stat = "identity", fill = "gray", color = "gray") +
   labs(x = "Value", y = "Frequency", title = "Histogram of counts_hrp") +
   theme_minimal() +
   # Adding ablines for summary components
   geom_vline(xintercept = summary_counts_hrp[2:5], color = c("blue", "green", "red", "purple"))+
   annotate("text", x = summary_counts_hrp[2:5], y = 0, label = names(summary_counts_hrp)[2:5], vjust = -0.5)
+
 
 
 #df_pcr
@@ -414,7 +416,7 @@ counts_pcr <- na.omit(c(df_pcr$day7,df_pcr$day14, df_pcr$day21, df_pcr$day28))
 summary_counts_pcr <- summary(counts_pcr)
 
 # Create histogram
-histogram <- hist(counts_pcr, plot = FALSE)
+histogram <- hist(counts_pcr, plot = FALSE, breaks = 30)
 
 # Convert histogram to data frame
 hist_data <- data.frame(
@@ -424,7 +426,7 @@ hist_data <- data.frame(
 
 # Create ggplot
 ggplot(hist_data, aes(x = breaks, y = count)) +
-  geom_bar(stat = "identity", fill = "skyblue", color = "black") +
+  geom_bar(stat = "identity", fill = "gray", color = "gray") +
   labs(x = "Value", y = "Frequency", title = "Histogram of counts_pcr") +
   theme_minimal() +
   # Adding ablines for summary components
