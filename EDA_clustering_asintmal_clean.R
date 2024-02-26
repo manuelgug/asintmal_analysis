@@ -297,6 +297,8 @@ names(stats_pfldh) <- cluster_cols_pfldh
 
 
 
+
+
 ##plotting### not done yet
 # 
 # library(ggplot2)
@@ -460,8 +462,126 @@ df_levels <- df_levels %>%
     TRUE ~ "M"
   ))
 
+#merge with original df
 df_final_thresolds <- merge(df, df_levels, by ="row.names")
 rownames(df_final_thresolds) <- df_final_thresolds$Row.names
 df_final_thresolds <- df_final_thresolds[,-1]
 
+# output
+write.csv(df_final_thresolds, "thresholds_all.csv")
+
+
+# Find the rows and columns where the column name contains "pcr" and "y"
+pcr_y_cols <- grep("pcr.*y", colnames(df_final_thresolds), value = TRUE)
+hrp_y_cols <- grep("hrp.*y", colnames(df_final_thresolds), value = TRUE)
+pfldh_y_cols <- grep("pfldh.*y", colnames(df_final_thresolds), value = TRUE)
+
+# Apply paste0 to the selected cells
+pcr_trajectories <- apply(df_final_thresolds[, pcr_y_cols], 1, function(row) paste(row, collapse = ""))
+hrp_trajectories <- apply(df_final_thresolds[, hrp_y_cols], 1, function(row) paste(row, collapse = ""))
+pfldh_trajectories <- apply(df_final_thresolds[, pfldh_y_cols], 1, function(row) paste(row, collapse = ""))
+
+all_trajectories <- as.data.frame(cbind(pcr_trajectories, hrp_trajectories, pfldh_trajectories))
+
+# Identify rows where any column contains "NA" as a substring
+rows_without_na_pattern <- apply(all_trajectories, 1, function(row) !any(grepl("NA", row)))
+
+# Subset the dataframe to keep only rows without the "NA" pattern
+all_trajectories <- all_trajectories[rows_without_na_pattern, ]
+
+# output
+write.csv(all_trajectories, "thresholds_all_trajectories.csv")
+
+
+#line plots
+df_pcr_trajectories_for_lineplots <- merge(df_pcr, all_trajectories["pcr_trajectories"], by ="row.names", all.y = T) # NA rows are auto removed
+rownames(df_pcr_trajectories_for_lineplots) <- df_pcr_trajectories_for_lineplots$Row.names
+df_pcr_trajectories_for_lineplots <- df_pcr_trajectories_for_lineplots[,-1]
+
+df_pcr_trajectories_for_lineplots_melteed <- pivot_longer(df_pcr_trajectories_for_lineplots, 
+                                                          cols = starts_with("day"),
+                                                          names_to = "Day",
+                                                          values_to = "Value")
+
+df_pcr_trajectories_for_lineplots_melteed$Day <- factor(df_pcr_trajectories_for_lineplots_melteed$Day, levels = c("day7", "day14", "day21", "day28"))
+
+color_palette <- colorRampPalette(c("cyan", "orange"))(n = length(unique(df_pcr_trajectories_for_lineplots_melteed$pcr_trajectories)))
+
+ggplot(df_pcr_trajectories_for_lineplots_melteed, aes(x = Day, y = Value, color = pcr_trajectories, group = pcr_trajectories)) +
+  geom_line(alpha =0.5, linewidth = 1) +
+  labs(x = "Day", y = "Value", color = "PFldH Trajectories") +
+  scale_color_manual(values = color_palette) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+
+df_hrp_trajectories_for_lineplots <- merge(df_hrp, all_trajectories["hrp_trajectories"], by ="row.names", all.y = T) # NA rows are auto removed
+rownames(df_hrp_trajectories_for_lineplots) <- df_hrp_trajectories_for_lineplots$Row.names
+df_hrp_trajectories_for_lineplots <- df_hrp_trajectories_for_lineplots[,-1]
+
+df_hrp_trajectories_for_lineplots_melteed <- pivot_longer(df_hrp_trajectories_for_lineplots, 
+                                                          cols = starts_with("day"),
+                                                          names_to = "Day",
+                                                          values_to = "Value")
+
+df_hrp_trajectories_for_lineplots_melteed$Day <- factor(df_hrp_trajectories_for_lineplots_melteed$Day, levels = c("day7", "day14", "day21", "day28"))
+
+color_palette <- colorRampPalette(c("cyan", "orange"))(n = length(unique(df_hrp_trajectories_for_lineplots_melteed$hrp_trajectories)))
+
+# Create the plot with the manual color scale
+ggplot(df_hrp_trajectories_for_lineplots_melteed, aes(x = Day, y = Value, color = hrp_trajectories, group = hrp_trajectories)) +
+  geom_line(alpha = 0.5, linewidth = 1) +
+  labs(x = "Day", y = "Value", color = "HRP Trajectories") +
+  scale_color_manual(values = color_palette) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+
+df_pfldh_trajectories_for_lineplots <- merge(df_pfldh, all_trajectories["pfldh_trajectories"], by ="row.names", all.y = T) # NA rows are auto removed
+rownames(df_pfldh_trajectories_for_lineplots) <- df_pfldh_trajectories_for_lineplots$Row.names
+df_pfldh_trajectories_for_lineplots <- df_pfldh_trajectories_for_lineplots[,-1]
+
+df_pfldh_trajectories_for_lineplots_melteed <- pivot_longer(df_pfldh_trajectories_for_lineplots, 
+                                                          cols = starts_with("day"),
+                                                          names_to = "Day",
+                                                          values_to = "Value")
+
+df_pfldh_trajectories_for_lineplots_melteed$Day <- factor(df_pfldh_trajectories_for_lineplots_melteed$Day, levels = c("day7", "day14", "day21", "day28"))
+
+color_palette <- colorRampPalette(c("cyan", "orange"))(n = length(unique(df_pfldh_trajectories_for_lineplots_melteed$pfldh_trajectories)))
+
+ggplot(df_pfldh_trajectories_for_lineplots_melteed, aes(x = Day, y = Value, color = pfldh_trajectories, group = pfldh_trajectories)) +
+  geom_line(alpha =0.5, linewidth = 1) +
+  labs(x = "Day", y = "Value", color = "PFldH Trajectories") +
+  scale_color_manual(values = color_palette) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+
+
+# # Convert the column contents to lists
+# pcr_list <- unique(all_trajectories$pcr_trajectories)
+# hrp_list <- unique(all_trajectories$hrp_trajectories)
+# pfldh_list <- unique(all_trajectories$pfldh_trajectories)
+# 
+# # Create the Venn diagram
+# venn_diagram <- venn.diagram(
+#   x = list(pcr = pcr_list, hrp = hrp_list, pfldh = pfldh_list),
+#   category.names = c("pcr", "hrp", "pfldh"),
+#   filename = NULL
+# )
+# 
+# grid.draw(venn_diagram) #middle are the categories found from all 3 metrics
+
+counts_traj_pcr  <- table(all_trajectories$pcr_trajectories)
+counts_traj_pcr<- as.data.frame(counts_traj_pcr)
+colnames(counts_traj_pcr)[2] <- c("traj_counts_pcr")
+counts_traj_hrp <- table(all_trajectories$hrp_trajectories)
+counts_traj_hrp<- as.data.frame(counts_traj_hrp)
+colnames(counts_traj_hrp)[2] <- c("traj_counts_hrp")
+counts_traj_pfldh <- table(all_trajectories$pfldh_trajectories)
+counts_traj_pfldh<- as.data.frame(counts_traj_pfldh)
+colnames(counts_traj_pfldh)[2] <- c("traj_counts_pfldh")
+
+merged_counts <- merge(merge(counts_traj_pcr, counts_traj_hrp, by = "Var1", all= T), counts_traj_pfldh, all = T) 
 
