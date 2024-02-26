@@ -286,6 +286,13 @@ write.csv(clusters_hrp_merged_df, "clusters_hrp_merged_df_raw_data.csv")
 clusters_pfldh_merged_df <- merge_clusters_with_df(df, clusters_pfldh)
 write.csv(clusters_pfldh_merged_df, "clusters_pfldh_merged_df_raw_data.csv")
 
+
+##ouput best result for alfredo
+hrp_best_clustering_alfredo <- merge(clusters_hrp_merged_df, alfredo_labels, by = "row.names")
+hrp_best_clustering_alfredo <- hrp_best_clustering_alfredo[,-24]
+colnames(hrp_best_clustering_alfredo)[1] <- "asint2" 
+
+write.csv(hrp_best_clustering_alfredo, "hrp_best_clustering_alfredo.csv")
 ## igual y hasta aquí es suficiente.
 
 #### DONE! ####
