@@ -3,6 +3,7 @@ library(dplyr)
 library(ggpubr)
 library(factoextra)
 library(tidyr)
+library(cowplot)
 
 df <- readxl::read_excel("DB_Manuel_25Feb24.xls")
 df <- as.data.frame(df)
@@ -116,19 +117,27 @@ perform_kmeans_analysis <- function(DF) {
   df_pchs_corrected[cols_with_inf] <- lapply(df_pchs_corrected[cols_with_inf], function(x) replace(x, is.infinite(x), 1))
   
   # Define a range of k values to explore
-  k_values <- 1:20  # You can adjust the range as needed
+  k_values <- 2:20  # You can adjust the range as needed
   
   # Initialize a vector to store the total within-cluster sum of squares (WSS) for each k
   wss <- numeric(length(k_values))
+  # Create an empty dataframe to store silhouette scores
+  sil_df <- data.frame(k = numeric(), silhouette = numeric())
   
   # Perform k-means clustering for each k and calculate WSS
   for (i in 1:length(k_values)) {
     k <- k_values[i]
     kmeans_result <- kmeans(df_pchs_corrected, centers = k, nstart = 100)
     wss[i] <- kmeans_result$tot.withinss
+    # Calculate silhouette scores
+    sil <- silhouette(kmeans_result$cluster, dist(df_pchs_corrected))
+    avg_sil <- mean(sil[, "sil_width"])
+    
+    # Store silhouette scores in the dataframe
+    sil_df <- rbind(sil_df, data.frame(k = k, silhouette = avg_sil))
   }
   
-  # Plot the elbow plot
+  # Create the elbow plot
   elbow_plot <- ggplot() +
     geom_line(aes(x = k_values, y = wss)) +
     geom_point(aes(x = k_values, y = wss)) +
@@ -137,27 +146,44 @@ perform_kmeans_analysis <- function(DF) {
          y = "Total Within-Cluster Sum of Squares (WSS)")+
     theme_minimal()
   
-  # # Save the grid plot as a PNG file with the name of the function input
-  filename <- paste(gsub(" ", "_", deparse(substitute(DF))), "_", "elbowplot", ".png", sep="")
-  ggsave(filename, elbow_plot, width = 6, height = 6, dpi = 300, bg ="white")
+  # Create the silhouette plot
+  silhouette_plot <- ggplot(sil_df, aes(x = k, y = silhouette)) +
+    geom_line() +
+    geom_point() +
+    labs(title = "Silhouette Plot", x = "Number of Clusters (k)", y = "Average Silhouette Width") +
+    theme_minimal()
+  
+  # Combine the plots into a single 2-panel figure with 2 columns
+  combined_plot <- plot_grid(elbow_plot, silhouette_plot, ncol = 2)
+  
+  # Save the combined plot as a PNG file with the name of the function input
+  filename <- paste(gsub(" ", "_", deparse(substitute(DF))), "_elbow_silhouette_plot", ".png", sep="")
+  ggsave(filename, combined_plot, width = 12, height = 6, dpi = 300, bg = "white")
   
   
   # Select the optimal number of clusters based on the elbow plot
-  optimal_k <- 2:10
+  optimal_k <- 2:11
   
   # Create an empty list to store plots
   plot_list <- list()
-
+  
+  # Create an empty dataframe to store silhouette scores
+  sil_df <- data.frame(k = numeric(), silhouette = numeric())
+  
   # Perform k-means clustering and plot for each optimal k
   for (k in optimal_k) {
     # Perform k-means clustering with the optimal k
     set.seed(69)
     kmeans_result <- kmeans(df_pchs_corrected, centers = k, nstart = 10000, iter.max = 10000)
     
-    # Add cluster assignment as a new column to df_pchs_corrected
-    df_pchs_corrected[[paste0("cluster_", k)]] <- kmeans_result$cluster
+    wss <- kmeans_result$betweenss / kmeans_result$totss * 100
     
-    wss <- kmeans_result$betweenss /kmeans_result$totss *100
+    # Calculate silhouette scores
+    sil <- silhouette(kmeans_result$cluster, dist(df_pchs_corrected))
+    avg_sil <- mean(sil[, "sil_width"])
+    
+    # Store silhouette scores in the dataframe
+    sil_df <- rbind(sil_df, data.frame(k = k, silhouette = avg_sil))
     
     # Plot kmeans clustering
     kmeans_plot <- fviz_cluster(kmeans_result, data = df_pchs_corrected[, 1:4],
@@ -192,21 +218,27 @@ perform_kmeans_analysis <- function(DF) {
       theme_minimal() +
       theme(axis.text.x = element_text(angle = 0, hjust = 0.5))
     
+    # Add silhouette scores to the line plot title
+    line_plot <- line_plot + labs(title = paste("Cluster Centers (k =", k, ") \n Average Silhouette Width =", round(avg_sil, 2)))
+    
     # Add plots to the list
     plot_list[[length(plot_list) + 1]] <- kmeans_plot
     plot_list[[length(plot_list) + 1]] <- line_plot
   }
   
+  
   # Arrange plots in a grid
   grid_plot <- cowplot::plot_grid(plotlist = plot_list, ncol = 2)
   
-  # # Save the grid plot as a PNG file with the name of the function input
+  # Save the grid plot as a PNG file with the name of the function input
   filename <- paste(gsub(" ", "_", deparse(substitute(DF))), "_", "kmeans_plot", ".png", sep="")
-  ggsave(filename, grid_plot, width = 16, height = 32, dpi = 300, bg ="white")
+  ggsave(filename, grid_plot, width = 16, height = 36, dpi = 300, bg ="white")
+  
   
   # Return the elbow plot and the grid plot
   return(df_pchs_corrected)
 }
+
 
 #output cluster labels
 merge_clusters_with_df <- function(df, clusters_pcr) {
@@ -543,9 +575,9 @@ rownames(df_pfldh_trajectories_for_lineplots) <- df_pfldh_trajectories_for_linep
 df_pfldh_trajectories_for_lineplots <- df_pfldh_trajectories_for_lineplots[,-1]
 
 df_pfldh_trajectories_for_lineplots_melteed <- pivot_longer(df_pfldh_trajectories_for_lineplots, 
-                                                          cols = starts_with("day"),
-                                                          names_to = "Day",
-                                                          values_to = "Value")
+                                                            cols = starts_with("day"),
+                                                            names_to = "Day",
+                                                            values_to = "Value")
 
 df_pfldh_trajectories_for_lineplots_melteed$Day <- factor(df_pfldh_trajectories_for_lineplots_melteed$Day, levels = c("day7", "day14", "day21", "day28"))
 
@@ -585,4 +617,3 @@ counts_traj_pfldh<- as.data.frame(counts_traj_pfldh)
 colnames(counts_traj_pfldh)[2] <- c("traj_counts_pfldh")
 
 merged_counts <- merge(merge(counts_traj_pcr, counts_traj_hrp, by = "Var1", all= T), counts_traj_pfldh, all = T) 
-
