@@ -1,9 +1,9 @@
 # Parasite Density Trajectory Analysis
 
-This repository contains an analysis aiming to identify clusters of parasite density across four weeks to describe the trajectory of parasites throughout time.
+This repository contains an analysis aiming to identify clusters that describe the trajectory of *P. falciparum* throughout time.
 
 ## Dataset
-The dataset used in this analysis contains measurements of parasite density across four weeks. Three different measurement techniques were used ("pcr", "hrp", and "pfldh") at four different time points ("day7", "day14", "day21", and "day28").
+The dataset used in this analysis contains measurements of parasite density across four weeks. Three different measurement techniques for parasite density were used ("pcr", "hrp", and "pfldh") at four different time points ("day7", "day14", "day21", and "day28").
 
 ## Methodology
 The analysis involves several steps:
