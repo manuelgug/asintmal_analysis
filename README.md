@@ -5,14 +5,18 @@ This repository contains an analysis aiming to identify clusters that describe t
 ## Dataset
 The dataset used in this analysis contains measurements of parasite density across four weeks. Three different measurement techniques for parasite density were used ("pcr", "hrp", and "pfldh") at four different time points ("day7", "day14", "day21", and "day28").
 
-## Methodology
-The analysis involves several steps:
+## Workflow
 
-1. **Data Formatting**: The dataset is processed to combine measurements techniques of each sample across different time points.
-2. **Correlation Analysis**: The correlation between parasite measurement techniques is examined using scatterplots.
-3. **Clustering Analysis**: K-means clustering is performed to identify clusters of parasite density trajectories across time.
-4. **Optimal K Selection**: Elbow method and silhouette analysis are used to determine the optimal number of clusters.
-5. **Visualization**: The results are visualized using various plots including elbow plots, silhouette plots, and cluster center plots.
+1. **Data Import and Preprocessing**: The script reads the data from an Excel file, extracts relevant columns, and preprocesses the data for analysis.
+
+2. **Outlier Removal**: Multivariate outliers are detected and removed using Mahalanobis distance.
+
+3. **Summary Statistics**: Summary statistics such as mean, median, and quartiles are calculated for each assay.
+
+4. **Correlation Analysis**: Pairwise correlation between parasite density measurements from different assays is analyzed and visualized using scatterplots.
+
+5. **Clustering Analysis**: K-means clustering is performed on the data to identify clusters based on parasite density measurements. Elbow plot and silhouette plot are generated to determine the optimal number of clusters. Cluster centers are visualized using line plots.
+
 
 ## Libraries Used
 - `ggplot2`: Data visualization.
