@@ -4,6 +4,7 @@ library(ggpubr)
 library(factoextra)
 library(tidyr)
 library(cowplot)
+library(cluster)
 
 df <- readxl::read_excel("DB_Manuel_25Feb24.xls")
 df <- as.data.frame(df)
@@ -46,6 +47,28 @@ df_pfldh <- as.data.frame(pfldh_combined, stringsAsFactors = FALSE)
 rownames(df_pfldh) <- rownames(df)
 colnames(df_pfldh) <- c("day7", "day14", "day21", "day28")
 
+# means of 3 measurements
+means_day7 <- rowMeans(cbind(df_pcr$day7, df_hrp$day7, df_pfldh$day7))
+means_day14 <- rowMeans(cbind(df_pcr$day14, df_hrp$day14, df_pfldh$day14))
+means_day21 <- rowMeans(cbind(df_pcr$day21, df_hrp$day21, df_pfldh$day21))
+means_day28 <- rowMeans(cbind(df_pcr$day28, df_hrp$day28, df_pfldh$day28))
+
+df_means <- as.data.frame(cbind(means_day7, means_day14, means_day21, means_day28))
+
+rownames(df_means) <- rownames(df)
+colnames(df_means) <- c("day7", "day14", "day21", "day28")
+
+
+# medians of 3 measurements
+medians_day7 <- apply(cbind(df_pcr$day7, df_hrp$day7, df_pfldh$day7), 1, median, na.rm = TRUE)
+medians_day14 <- apply(cbind(df_pcr$day14, df_hrp$day14, df_pfldh$day14), 1, median, na.rm = TRUE)
+medians_day21 <- apply(cbind(df_pcr$day21, df_hrp$day21, df_pfldh$day21), 1, median, na.rm = TRUE)
+medians_day28 <- apply(cbind(df_pcr$day28, df_hrp$day28, df_pfldh$day28), 1, median, na.rm = TRUE)
+
+df_medians <- as.data.frame(cbind(medians_day7, medians_day14, medians_day21, medians_day28))
+
+rownames(df_medians) <- rownames(df)
+colnames(df_medians) <- c("day7", "day14", "day21", "day28")
 
 ####################################
 # CORRELATION BETWEN MEASUREMENTS
@@ -269,12 +292,43 @@ merge_clusters_with_df <- function(df, clusters_pcr) {
 }
 
 
+remove_outliers_multivariate <- function(df) {
+  # Calculate Mahalanobis distance
+  mahalanobis_dist <- mahalanobis(na.omit(df), colMeans(na.omit(df)), cov(na.omit(df)))
+  
+  # Set a threshold for outlier detection
+  threshold <- qchisq(0.95, df = ncol(df))
+  
+  # Identify outliers
+  outliers <- which(mahalanobis_dist > threshold)
+  
+  # Remove outliers
+  df_no_outliers <- df[-outliers, ]
+  
+  return(df_no_outliers)
+}
+
+# remove outliers
+df_pcr_no_outliers <- remove_outliers_multivariate(df_pcr)
+df_hrp_no_outliers <- remove_outliers_multivariate(df_hrp)
+df_pfldh_no_outliers <- remove_outliers_multivariate(df_pfldh)
+df_means_no_outliers <- remove_outliers_multivariate(df_means)
+df_medians_no_outliers <- remove_outliers_multivariate(df_medians)
+
+
 # perform analysis WITHOUT ANY FORMULA OR TRANSFORMATION, ONLY PARASITE COUNTS
 clusters_pcr <- perform_kmeans_analysis(df_pcr)
-
 clusters_hrp <- perform_kmeans_analysis(df_hrp)
-
 clusters_pfldh <- perform_kmeans_analysis(df_pfldh)
+clusters_means <- perform_kmeans_analysis(df_means)
+clusters_medians <- perform_kmeans_analysis(df_medians)
+
+clusters_pcr_no_outliers <- perform_kmeans_analysis(df_pcr_no_outliers)
+clusters_hrp_no_outliers <- perform_kmeans_analysis(df_hrp_no_outliers)
+clusters_pfldh_no_outliers <- perform_kmeans_analysis(df_pfldh_no_outliers)
+clusters_means_no_outliers <- perform_kmeans_analysis(df_means_no_outliers)
+clusters_medians_no_outliers <- perform_kmeans_analysis(df_medians_no_outliers)
+
 
 # output cluster labels for each sample
 clusters_pcr_merged_df <- merge_clusters_with_df(df, clusters_pcr)
@@ -285,6 +339,9 @@ write.csv(clusters_hrp_merged_df, "clusters_hrp_merged_df_raw_data.csv")
 
 clusters_pfldh_merged_df <- merge_clusters_with_df(df, clusters_pfldh)
 write.csv(clusters_pfldh_merged_df, "clusters_pfldh_merged_df_raw_data.csv")
+
+clusters_means_merged_df <- merge_clusters_with_df(df, clusters_means)
+write.csv(clusters_means_merged_df, "clusters_means_merged_df_raw_data.csv")
 
 
 ##ouput best result for alfredo
