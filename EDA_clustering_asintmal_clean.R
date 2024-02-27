@@ -251,7 +251,7 @@ perform_kmeans_analysis <- function(DF, loga = F) {
   
   
   # Select the optimal number of clusters based on the elbow plot
-  optimal_k <- 2:11
+  optimal_k <- 2:12
   
   # Create an empty list to store plots
   plot_list <- list()
@@ -279,7 +279,7 @@ perform_kmeans_analysis <- function(DF, loga = F) {
     
     # Plot kmeans clustering
     kmeans_plot <- fviz_cluster(kmeans_result, data = df_pchs_corrected[, 1:4],
-                                palette = c("pink2", "#00AFBB", "magenta", "orange4", "limegreen", "darkviolet", "red2", "orange", "yellow2", "grey54", "black"), 
+                                palette = c("pink2", "#00AFBB", "magenta", "orange4", "limegreen", "darkviolet", "red2", "orange", "yellow2", "grey54", "black", "cyan"), 
                                 geom = "point",
                                 ellipse.type = "convex", 
                                 ggtheme = theme_bw()) +
@@ -323,7 +323,7 @@ perform_kmeans_analysis <- function(DF, loga = F) {
     # Plot the line plot
     line_plot <- ggplot(centers_df_long, aes(x = Variable, y = Value, group = Cluster, color = Cluster)) +
       geom_line(linewidth = 1) +
-      scale_color_manual(values = c("pink2", "#00AFBB", "magenta", "orange4", "limegreen", "darkviolet", "red2", "orange", "yellow2", "grey54", "black")) +
+      scale_color_manual(values = c("pink2", "#00AFBB", "magenta", "orange4", "limegreen", "darkviolet", "red2", "orange", "yellow2", "grey54", "black", "cyan")) +
       labs(title = paste("Cluster Centers (k =", k, ")"),
            x = "",
            y = ylabel) +
@@ -348,7 +348,7 @@ perform_kmeans_analysis <- function(DF, loga = F) {
   
   # Save the grid plot as a PNG file with the name of the function input
   filename <- paste(gsub(" ", "_", deparse(substitute(DF))), "_", "kmeans_plot", ".png", sep="")
-  ggsave(filename, grid_plot, width = 16, height = 36, dpi = 300, bg ="white")
+  ggsave(filename, grid_plot, width = 21, height = 48, dpi = 300, bg ="white")
   
   
   # Return the elbow plot and the grid plot
@@ -431,11 +431,11 @@ write.csv(clusters_medians_merged_df_no_outliers, "clusters_medians_merged_df_no
 
 
 ##ouput best result for alfredo
-hrp_best_clustering_alfredo <- merge(clusters_hrp_merged_df, alfredo_labels, by = "row.names")
-hrp_best_clustering_alfredo <- hrp_best_clustering_alfredo[,-24]
-colnames(hrp_best_clustering_alfredo)[1] <- "asint2" 
-
-write.csv(hrp_best_clustering_alfredo, "hrp_best_clustering_alfredo.csv")
+# hrp_best_clustering_alfredo <- merge(clusters_hrp_merged_df, alfredo_labels, by = "row.names")
+# hrp_best_clustering_alfredo <- hrp_best_clustering_alfredo[,-24]
+# colnames(hrp_best_clustering_alfredo)[1] <- "asint2" 
+# 
+# write.csv(hrp_best_clustering_alfredo, "hrp_best_clustering_alfredo.csv")
 ## igual y hasta aquí es suficiente.
 
 #### DONE! ####
