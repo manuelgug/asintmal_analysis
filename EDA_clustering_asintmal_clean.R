@@ -70,6 +70,71 @@ df_medians <- as.data.frame(cbind(medians_day7, medians_day14, medians_day21, me
 rownames(df_medians) <- rownames(df)
 colnames(df_medians) <- c("day7", "day14", "day21", "day28")
 
+
+####################################
+# REMOVE OUTLIERS
+####################################
+
+remove_outliers_multivariate <- function(df) {
+  # Calculate Mahalanobis distance
+  mahalanobis_dist <- mahalanobis(na.omit(df), colMeans(na.omit(df)), cov(na.omit(df)))
+  
+  # Set a threshold for outlier detection
+  threshold <- qchisq(0.95, df = ncol(df))
+  
+  # Identify outliers
+  outliers <- which(mahalanobis_dist > threshold)
+  
+  # Remove outliers
+  df_no_outliers <- df[-outliers, ]
+  
+  return(df_no_outliers)
+}
+
+# remove outliers
+df_pcr_no_outliers <- remove_outliers_multivariate(df_pcr)
+df_hrp_no_outliers <- remove_outliers_multivariate(df_hrp)
+df_pfldh_no_outliers <- remove_outliers_multivariate(df_pfldh)
+df_means_no_outliers <- remove_outliers_multivariate(df_means)
+df_medians_no_outliers <- remove_outliers_multivariate(df_medians)
+
+
+####################################
+# SUMMARY STATS
+####################################
+
+counts_pfldh <- na.omit(c(df_pfldh$day7,df_pfldh$day14, df_pfldh$day21, df_pfldh$day28))
+summary_counts_pfldh <- summary(counts_pfldh)
+
+counts_pcr <- na.omit(c(df_pcr$day7, df_pcr$day14, df_pcr$day21, df_pcr$day28))
+summary_counts_pcr <- summary(counts_pcr)
+mode(counts_pcr)
+
+counts_hrp <- na.omit(c(df_hrp$day7, df_hrp$day14, df_hrp$day21, df_hrp$day28))
+summary_counts_hrp <- summary(counts_hrp)
+
+counts_means <- na.omit(c(df_means$day7, df_means$day14, df_means$day21, df_means$day28))
+summary_counts_means <- summary(counts_means)
+
+counts_medians <- na.omit(c(df_medians$day7, df_medians$day14, df_medians$day21, df_medians$day28))
+summary_counts_medians <- summary(counts_medians)
+
+counts_pfldh_no_outliers <- na.omit(c(df_pfldh_no_outliers$day7, df_pfldh_no_outliers$day14, df_pfldh_no_outliers$day21, df_pfldh_no_outliers$day28))
+summary_counts_pfldh_no_outliers <- summary(counts_pfldh_no_outliers)
+
+counts_pcr_no_outliers <- na.omit(c(df_pcr_no_outliers$day7, df_pcr_no_outliers$day14, df_pcr_no_outliers$day21, df_pcr_no_outliers$day28))
+summary_counts_pcr_no_outliers <- summary(counts_pcr_no_outliers)
+
+counts_hrp_no_outliers <- na.omit(c(df_hrp_no_outliers$day7, df_hrp_no_outliers$day14, df_hrp_no_outliers$day21, df_hrp_no_outliers$day28))
+summary_counts_hrp_no_outliers <- summary(counts_hrp_no_outliers)
+
+counts_means_no_outliers <- na.omit(c(df_means_no_outliers$day7, df_means_no_outliers$day14, df_means_no_outliers$day21, df_means_no_outliers$day28))
+summary_counts_means_no_outliers <- summary(counts_means_no_outliers)
+
+counts_medians_no_outliers <- na.omit(c(df_medians_no_outliers$day7, df_medians_no_outliers$day14, df_medians_no_outliers$day21, df_medians_no_outliers$day28))
+summary_counts_medians_no_outliers <- summary(counts_medians_no_outliers)
+
+
 ####################################
 # CORRELATION BETWEN MEASUREMENTS
 ####################################
@@ -130,7 +195,7 @@ ggsave("metrics_correlations.png", grid_plot, width = 10, height = 16, dpi = 300
 ####################################
 
 ## FULL KMEANS ANALYSIS
-perform_kmeans_analysis <- function(DF) {
+perform_kmeans_analysis <- function(DF, loga = F) {
   # Remove NA rows
   df_pchs_complete_cases <- DF[complete.cases(DF),]
   
@@ -214,7 +279,7 @@ perform_kmeans_analysis <- function(DF) {
     
     # Plot kmeans clustering
     kmeans_plot <- fviz_cluster(kmeans_result, data = df_pchs_corrected[, 1:4],
-                                palette = c("pink2", "#00AFBB", "#E7B800", "orange4", "limegreen", "darkviolet", "red2", "orange", "yellow2", "grey54", "black"), 
+                                palette = c("pink2", "#00AFBB", "magenta", "orange4", "limegreen", "darkviolet", "red2", "orange", "yellow2", "grey54", "black"), 
                                 geom = "point",
                                 ellipse.type = "convex", 
                                 ggtheme = theme_bw()) +
@@ -235,15 +300,39 @@ perform_kmeans_analysis <- function(DF) {
     # Reorder the levels of the Variable column
     centers_df_long$Variable <- factor(centers_df_long$Variable, levels = desired_order)
     
+    ylabel = c("Parasite Density")
+    #ss = summary_stats[c(2, 3, 5)]
+    
+    mean_centers <- mean(centers_df_long$Value)
+    sd_centers <- sd(centers_df_long$Value)
+    
+    ss <- c(mean_centers - sd_centers, mean_centers, mean_centers + sd_centers) 
+    names(ss) <- c("-minus1σ", "mean", "1σ")
+    
+    if (loga == TRUE){
+      mean_centers <- mean(log(centers_df_long$Value))
+      sd_centers <- sd(log(centers_df_long$Value))
+      
+      ss <- c(mean_centers - sd_centers, mean_centers, mean_centers + sd_centers) 
+      names(ss) <- c("-1σ", "mean", "1σ")
+      
+      centers_df_long$Value <- log(centers_df_long$Value)
+      ylabel <- c("log(Parasite Density)")
+    }
+    
     # Plot the line plot
     line_plot <- ggplot(centers_df_long, aes(x = Variable, y = Value, group = Cluster, color = Cluster)) +
       geom_line(linewidth = 1) +
-      scale_color_manual(values = c("pink2", "#00AFBB", "#E7B800", "orange4", "limegreen", "darkviolet", "red2", "orange", "yellow2", "grey54", "black")) +
+      scale_color_manual(values = c("pink2", "#00AFBB", "magenta", "orange4", "limegreen", "darkviolet", "red2", "orange", "yellow2", "grey54", "black")) +
       labs(title = paste("Cluster Centers (k =", k, ")"),
            x = "",
-           y = "Parasite Density") +
+           y = ylabel) +
       theme_minimal() +
-      theme(axis.text.x = element_text(angle = 0, hjust = 0.5))
+      theme(axis.text.x = element_text(angle = 0, hjust = 0.5),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank())+
+      geom_hline(yintercept = ss, color = c("gray76", "gray76", "gray76"), linetype = "dashed")+
+      annotate("text", y = ss, x = 0.75, label = names(ss))
     
     # Add silhouette scores to the line plot title
     line_plot <- line_plot + labs(title = paste("Cluster Centers (k =", k, ") \nAverage Silhouette Width =", round(avg_sil, 2)))
@@ -265,6 +354,20 @@ perform_kmeans_analysis <- function(DF) {
   # Return the elbow plot and the grid plot
   return(df_pchs_corrected)
 }
+
+# perform analysis WITHOUT ANY FORMULA OR TRANSFORMATION (log is for viz of lineplot), ONLY PARASITE COUNTS
+clusters_pcr <- perform_kmeans_analysis(df_pcr, loga =T)
+clusters_hrp <- perform_kmeans_analysis(df_hrp, loga =T)
+clusters_pfldh <- perform_kmeans_analysis(df_pfldh, loga =T)
+clusters_means <- perform_kmeans_analysis(df_means, loga =T)
+clusters_medians <- perform_kmeans_analysis(df_medians, loga =T)
+
+clusters_pcr_no_outliers <- perform_kmeans_analysis(df_pcr_no_outliers, loga =T)
+clusters_hrp_no_outliers <- perform_kmeans_analysis(df_hrp_no_outliers, loga =T)
+clusters_pfldh_no_outliers <- perform_kmeans_analysis(df_pfldh_no_outliers, loga =T)
+clusters_means_no_outliers <- perform_kmeans_analysis(df_means_no_outliers, loga =T)
+clusters_medians_no_outliers <- perform_kmeans_analysis(df_medians_no_outliers, loga =T)
+
 
 
 #output cluster labels
@@ -291,45 +394,6 @@ merge_clusters_with_df <- function(df, clusters_pcr) {
   return(merged_df)
 }
 
-
-remove_outliers_multivariate <- function(df) {
-  # Calculate Mahalanobis distance
-  mahalanobis_dist <- mahalanobis(na.omit(df), colMeans(na.omit(df)), cov(na.omit(df)))
-  
-  # Set a threshold for outlier detection
-  threshold <- qchisq(0.95, df = ncol(df))
-  
-  # Identify outliers
-  outliers <- which(mahalanobis_dist > threshold)
-  
-  # Remove outliers
-  df_no_outliers <- df[-outliers, ]
-  
-  return(df_no_outliers)
-}
-
-# remove outliers
-df_pcr_no_outliers <- remove_outliers_multivariate(df_pcr)
-df_hrp_no_outliers <- remove_outliers_multivariate(df_hrp)
-df_pfldh_no_outliers <- remove_outliers_multivariate(df_pfldh)
-df_means_no_outliers <- remove_outliers_multivariate(df_means)
-df_medians_no_outliers <- remove_outliers_multivariate(df_medians)
-
-
-# perform analysis WITHOUT ANY FORMULA OR TRANSFORMATION, ONLY PARASITE COUNTS
-clusters_pcr <- perform_kmeans_analysis(df_pcr)
-clusters_hrp <- perform_kmeans_analysis(df_hrp)
-clusters_pfldh <- perform_kmeans_analysis(df_pfldh)
-clusters_means <- perform_kmeans_analysis(df_means)
-clusters_medians <- perform_kmeans_analysis(df_medians)
-
-clusters_pcr_no_outliers <- perform_kmeans_analysis(df_pcr_no_outliers)
-clusters_hrp_no_outliers <- perform_kmeans_analysis(df_hrp_no_outliers)
-clusters_pfldh_no_outliers <- perform_kmeans_analysis(df_pfldh_no_outliers)
-clusters_means_no_outliers <- perform_kmeans_analysis(df_means_no_outliers)
-clusters_medians_no_outliers <- perform_kmeans_analysis(df_medians_no_outliers)
-
-
 # output cluster labels for each sample
 clusters_pcr_merged_df <- merge_clusters_with_df(df, clusters_pcr)
 write.csv(clusters_pcr_merged_df, "clusters_pcr_merged_df_raw_data.csv")
@@ -342,6 +406,28 @@ write.csv(clusters_pfldh_merged_df, "clusters_pfldh_merged_df_raw_data.csv")
 
 clusters_means_merged_df <- merge_clusters_with_df(df, clusters_means)
 write.csv(clusters_means_merged_df, "clusters_means_merged_df_raw_data.csv")
+
+clusters_medians_merged_df <- merge_clusters_with_df(df, clusters_medians)
+write.csv(clusters_medians_merged_df, "clusters_medians_merged_df_raw_data.csv")
+
+
+clusters_pcr_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_pcr_no_outliers)
+write.csv(clusters_pcr_merged_df_no_outliers, "clusters_pcr_merged_df_no_outliers_raw_data.csv")
+
+clusters_hrp_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_hrp_no_outliers)
+write.csv(clusters_hrp_merged_df_no_outliers, "clusters_hrp_merged_df_no_outliers_raw_data.csv")
+
+clusters_pfldh_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_pfldh_no_outliers)
+write.csv(clusters_pfldh_merged_df_no_outliers, "clusters_pfldh_merged_df_no_outliers_raw_data.csv")
+
+clusters_means_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_means_no_outliers)
+write.csv(clusters_means_merged_df_no_outliers, "clusters_means_merged_df_no_outliers_raw_data.csv")
+
+clusters_medians_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_medians_no_outliers)
+write.csv(clusters_medians_merged_df_no_outliers, "clusters_medians_merged_df_no_outliers_raw_data.csv")
+
+
+
 
 
 ##ouput best result for alfredo
