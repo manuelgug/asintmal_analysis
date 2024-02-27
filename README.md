@@ -2,6 +2,9 @@
 
 This repository contains an analysis aiming to identify clusters that describe the trajectory of *P. falciparum* throughout time.
 
+![img.png](https://github.com/manuelgug/asintmal_analysis/blob/main/imgs/img.png)
+
+
 ## Dataset
 The dataset used in this analysis contains measurements of parasite density across four weeks. Three different measurement techniques for parasite density were used ("pcr", "hrp", and "pfldh") at four different time points ("day7", "day14", "day21", and "day28").
 
