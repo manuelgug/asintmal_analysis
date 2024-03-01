@@ -47,28 +47,66 @@ df_pfldh <- as.data.frame(pfldh_combined, stringsAsFactors = FALSE)
 rownames(df_pfldh) <- rownames(df)
 colnames(df_pfldh) <- c("day7", "day14", "day21", "day28")
 
-# means of 3 measurements
-means_day7 <- rowMeans(cbind(df_pcr$day7, df_hrp$day7, df_pfldh$day7))
-means_day14 <- rowMeans(cbind(df_pcr$day14, df_hrp$day14, df_pfldh$day14))
-means_day21 <- rowMeans(cbind(df_pcr$day21, df_hrp$day21, df_pfldh$day21))
-means_day28 <- rowMeans(cbind(df_pcr$day28, df_hrp$day28, df_pfldh$day28))
+# standardize the 3 measurements
+all_pcr <- as.data.frame(c(df_pcr$day7, df_pcr$day14, df_pcr$day21, df_pcr$day28))
+colnames(all_pcr)[1] <- "all_pcr" 
+all_pcr_scaled <- scale(all_pcr)
+all_hrp <- as.data.frame(c(df_hrp$day7, df_hrp$day14, df_hrp$day21, df_hrp$day28))
+colnames(all_hrp)[1] <- "all_hrp" 
+all_hrp_scaled <- scale(all_hrp)
+all_pfldh <- as.data.frame(c(df_pfldh$day7, df_pfldh$day14, df_pfldh$day21, df_pfldh$day28))
+colnames(all_pfldh)[1] <- "all_pfldh" 
+all_pfldh_scaled <- scale(all_pfldh)
 
-df_means <- as.data.frame(cbind(means_day7, means_day14, means_day21, means_day28))
+three_standardized <- rowSums(cbind(all_pcr_scaled, all_hrp_scaled, all_pfldh_scaled))
 
-rownames(df_means) <- rownames(df)
-colnames(df_means) <- c("day7", "day14", "day21", "day28")
+#reorder
+scaled_df <- data.frame(matrix(nrow = 115, ncol = 4))
+scaled_df[,1] <- three_standardized[1:115]
+scaled_df[,2] <- three_standardized[116:230]
+scaled_df[,3] <- three_standardized[231:345]
+scaled_df[,4] <- three_standardized[346:460]
 
+rownames(scaled_df) <- rownames(df)
+colnames(scaled_df) <- c("day7", "day14", "day21", "day28")
+
+#geometric mean
+library(psych)
+
+geometric_mean <- apply(cbind(all_pcr, all_hrp, all_pfldh), 1, geometric.mean)
+
+gm_df <- data.frame(matrix(nrow = 115, ncol = 4))
+gm_df[,1] <- geometric_mean[1:115]
+gm_df[,2] <- geometric_mean[116:230]
+gm_df[,3] <- geometric_mean[231:345]
+gm_df[,4] <- geometric_mean[346:460]
+
+rownames(gm_df) <- rownames(df)
+colnames(gm_df) <- c("day7", "day14", "day21", "day28")
+
+
+# View the dataframe
+
+# means_day7 <- rowMeans(cbind(df_pcr$day7, df_hrp$day7, df_pfldh$day7))
+# means_day14 <- rowMeans(cbind(df_pcr$day14, df_hrp$day14, df_pfldh$day14))
+# means_day21 <- rowMeans(cbind(df_pcr$day21, df_hrp$day21, df_pfldh$day21))
+# means_day28 <- rowMeans(cbind(df_pcr$day28, df_hrp$day28, df_pfldh$day28))
+# 
+# df_means <- as.data.frame(cbind(means_day7, means_day14, means_day21, means_day28))
+# 
+# rownames(df_means) <- rownames(df)
+# colnames(df_means) <- c("day7", "day14", "day21", "day28")
 
 # medians of 3 measurements
-medians_day7 <- apply(cbind(df_pcr$day7, df_hrp$day7, df_pfldh$day7), 1, median, na.rm = TRUE)
-medians_day14 <- apply(cbind(df_pcr$day14, df_hrp$day14, df_pfldh$day14), 1, median, na.rm = TRUE)
-medians_day21 <- apply(cbind(df_pcr$day21, df_hrp$day21, df_pfldh$day21), 1, median, na.rm = TRUE)
-medians_day28 <- apply(cbind(df_pcr$day28, df_hrp$day28, df_pfldh$day28), 1, median, na.rm = TRUE)
-
-df_medians <- as.data.frame(cbind(medians_day7, medians_day14, medians_day21, medians_day28))
-
-rownames(df_medians) <- rownames(df)
-colnames(df_medians) <- c("day7", "day14", "day21", "day28")
+# medians_day7 <- apply(cbind(df_pcr$day7, df_hrp$day7, df_pfldh$day7), 1, median, na.rm = TRUE)
+# medians_day14 <- apply(cbind(df_pcr$day14, df_hrp$day14, df_pfldh$day14), 1, median, na.rm = TRUE)
+# medians_day21 <- apply(cbind(df_pcr$day21, df_hrp$day21, df_pfldh$day21), 1, median, na.rm = TRUE)
+# medians_day28 <- apply(cbind(df_pcr$day28, df_hrp$day28, df_pfldh$day28), 1, median, na.rm = TRUE)
+# 
+# df_medians <- as.data.frame(cbind(medians_day7, medians_day14, medians_day21, medians_day28))
+# 
+# rownames(df_medians) <- rownames(df)
+# colnames(df_medians) <- c("day7", "day14", "day21", "day28")
 
 
 ####################################
@@ -95,8 +133,10 @@ remove_outliers_multivariate <- function(df) {
 df_pcr_no_outliers <- remove_outliers_multivariate(df_pcr)
 df_hrp_no_outliers <- remove_outliers_multivariate(df_hrp)
 df_pfldh_no_outliers <- remove_outliers_multivariate(df_pfldh)
-df_means_no_outliers <- remove_outliers_multivariate(df_means)
-df_medians_no_outliers <- remove_outliers_multivariate(df_medians)
+scaled_df_no_outliers <- remove_outliers_multivariate(scaled_df)
+gm_df_no_outliers <- remove_outliers_multivariate(gm_df)
+# df_means_no_outliers <- remove_outliers_multivariate(df_means)
+# df_medians_no_outliers <- remove_outliers_multivariate(df_medians)
 
 
 ####################################
@@ -108,16 +148,22 @@ summary_counts_pfldh <- summary(counts_pfldh)
 
 counts_pcr <- na.omit(c(df_pcr$day7, df_pcr$day14, df_pcr$day21, df_pcr$day28))
 summary_counts_pcr <- summary(counts_pcr)
-mode(counts_pcr)
 
 counts_hrp <- na.omit(c(df_hrp$day7, df_hrp$day14, df_hrp$day21, df_hrp$day28))
 summary_counts_hrp <- summary(counts_hrp)
 
-counts_means <- na.omit(c(df_means$day7, df_means$day14, df_means$day21, df_means$day28))
-summary_counts_means <- summary(counts_means)
+counts_scaled <- na.omit(c(scaled_df$day7, scaled_df$day14, scaled_df$day21, scaled_df$day28))
+summary_counts_scaled <- summary(counts_scaled)
 
-counts_medians <- na.omit(c(df_medians$day7, df_medians$day14, df_medians$day21, df_medians$day28))
-summary_counts_medians <- summary(counts_medians)
+counts_gm <- na.omit(c(gm_df$day7, gm_df$day14, gm_df$day21, gm_df$day28))
+summary_counts_gm <- summary(counts_gm)
+
+# 
+# counts_means <- na.omit(c(df_means$day7, df_means$day14, df_means$day21, df_means$day28))
+# summary_counts_means <- summary(counts_means)
+# 
+# counts_medians <- na.omit(c(df_medians$day7, df_medians$day14, df_medians$day21, df_medians$day28))
+# summary_counts_medians <- summary(counts_medians)
 
 counts_pfldh_no_outliers <- na.omit(c(df_pfldh_no_outliers$day7, df_pfldh_no_outliers$day14, df_pfldh_no_outliers$day21, df_pfldh_no_outliers$day28))
 summary_counts_pfldh_no_outliers <- summary(counts_pfldh_no_outliers)
@@ -128,11 +174,18 @@ summary_counts_pcr_no_outliers <- summary(counts_pcr_no_outliers)
 counts_hrp_no_outliers <- na.omit(c(df_hrp_no_outliers$day7, df_hrp_no_outliers$day14, df_hrp_no_outliers$day21, df_hrp_no_outliers$day28))
 summary_counts_hrp_no_outliers <- summary(counts_hrp_no_outliers)
 
-counts_means_no_outliers <- na.omit(c(df_means_no_outliers$day7, df_means_no_outliers$day14, df_means_no_outliers$day21, df_means_no_outliers$day28))
-summary_counts_means_no_outliers <- summary(counts_means_no_outliers)
+counts_scaled_no_outliers <- na.omit(c(scaled_df_no_outliers$day7, scaled_df_no_outliers$day14, scaled_df_no_outliers$day21, scaled_df_no_outliers$day28))
+summary_counts_scaled_no_outliers <- summary(counts_scaled_no_outliers)
 
-counts_medians_no_outliers <- na.omit(c(df_medians_no_outliers$day7, df_medians_no_outliers$day14, df_medians_no_outliers$day21, df_medians_no_outliers$day28))
-summary_counts_medians_no_outliers <- summary(counts_medians_no_outliers)
+counts_gm_no_outliers <- na.omit(c(gm_df_no_outliers$day7, gm_df_no_outliers$day14, gm_df_no_outliers$day21, gm_df_no_outliers$day28))
+summary_counts_gm_no_outliers <- summary(counts_gm_no_outliers)
+
+# counts_means_no_outliers <- na.omit(c(df_means_no_outliers$day7, df_means_no_outliers$day14, df_means_no_outliers$day21, df_means_no_outliers$day28))
+# summary_counts_means_no_outliers <- summary(counts_means_no_outliers)
+# 
+# counts_medians_no_outliers <- na.omit(c(df_medians_no_outliers$day7, df_medians_no_outliers$day14, df_medians_no_outliers$day21, df_medians_no_outliers$day28))
+# summary_counts_medians_no_outliers <- summary(counts_medians_no_outliers)
+
 
 
 ####################################
@@ -306,15 +359,15 @@ perform_kmeans_analysis <- function(DF, loga = F) {
     mean_centers <- mean(centers_df_long$Value)
     sd_centers <- sd(centers_df_long$Value)
     
-    ss <- c(mean_centers - sd_centers, mean_centers, mean_centers + sd_centers) 
-    names(ss) <- c("-minus1σ", "mean", "1σ")
+    ss <- c(mean_centers - sd_centers, mean_centers, mean_centers + sd_centers, mean_centers + sd_centers*2) 
+    names(ss) <- c("-1σ", "mean", "1σ", "2σ")
     
     if (loga == TRUE){
       mean_centers <- mean(log(centers_df_long$Value))
       sd_centers <- sd(log(centers_df_long$Value))
       
-      ss <- c(mean_centers - sd_centers, mean_centers, mean_centers + sd_centers) 
-      names(ss) <- c("-1σ", "mean", "1σ")
+      ss <- c(mean_centers - sd_centers, mean_centers, mean_centers + sd_centers, mean_centers + sd_centers*2) 
+      names(ss) <- c("-1σ", "mean", "1σ", "2σ")
       
       centers_df_long$Value <- log(centers_df_long$Value)
       ylabel <- c("log(Parasite Density)")
@@ -331,7 +384,7 @@ perform_kmeans_analysis <- function(DF, loga = F) {
       theme(axis.text.x = element_text(angle = 0, hjust = 0.5),
             panel.grid.major = element_blank(),
             panel.grid.minor = element_blank())+
-      geom_hline(yintercept = ss, color = c("gray76", "gray76", "gray76"), linetype = "dashed")+
+      geom_hline(yintercept = ss, color = c("gray76", "gray76", "gray76", "gray76"), linetype = "dashed")+
       annotate("text", y = ss, x = 0.75, label = names(ss))
     
     # Add silhouette scores to the line plot title
@@ -359,14 +412,19 @@ perform_kmeans_analysis <- function(DF, loga = F) {
 clusters_pcr <- perform_kmeans_analysis(df_pcr, loga =T)
 clusters_hrp <- perform_kmeans_analysis(df_hrp, loga =T)
 clusters_pfldh <- perform_kmeans_analysis(df_pfldh, loga =T)
-clusters_means <- perform_kmeans_analysis(df_means, loga =T)
-clusters_medians <- perform_kmeans_analysis(df_medians, loga =T)
+# clusters_means <- perform_kmeans_analysis(df_means, loga =T)
+# clusters_medians <- perform_kmeans_analysis(df_medians, loga =T)
+clusters_scaled <- perform_kmeans_analysis(scaled_df, loga =F)
+clusters_gm <- perform_kmeans_analysis(gm_df, loga =T)
+
 
 clusters_pcr_no_outliers <- perform_kmeans_analysis(df_pcr_no_outliers, loga =T)
 clusters_hrp_no_outliers <- perform_kmeans_analysis(df_hrp_no_outliers, loga =T)
 clusters_pfldh_no_outliers <- perform_kmeans_analysis(df_pfldh_no_outliers, loga =T)
-clusters_means_no_outliers <- perform_kmeans_analysis(df_means_no_outliers, loga =T)
-clusters_medians_no_outliers <- perform_kmeans_analysis(df_medians_no_outliers, loga =T)
+# clusters_means_no_outliers <- perform_kmeans_analysis(df_means_no_outliers, loga =T)
+# clusters_medians_no_outliers <- perform_kmeans_analysis(df_medians_no_outliers, loga =T)
+clusters_scaled_no_outliers <- perform_kmeans_analysis(scaled_df_no_outliers, loga =F)
+clusters_gm_no_outliers <- perform_kmeans_analysis(gm_df_no_outliers, loga =T)
 
 
 
@@ -404,11 +462,14 @@ write.csv(clusters_hrp_merged_df, "clusters_hrp_merged_df_raw_data.csv")
 clusters_pfldh_merged_df <- merge_clusters_with_df(df, clusters_pfldh)
 write.csv(clusters_pfldh_merged_df, "clusters_pfldh_merged_df_raw_data.csv")
 
-clusters_means_merged_df <- merge_clusters_with_df(df, clusters_means)
-write.csv(clusters_means_merged_df, "clusters_means_merged_df_raw_data.csv")
+clusters_scaled_merged_df <- merge_clusters_with_df(df, clusters_scaled)
+write.csv(clusters_scaled_merged_df, "clusters_scaled_merged_df_raw_data.csv")
 
-clusters_medians_merged_df <- merge_clusters_with_df(df, clusters_medians)
-write.csv(clusters_medians_merged_df, "clusters_medians_merged_df_raw_data.csv")
+# clusters_means_merged_df <- merge_clusters_with_df(df, clusters_means)
+# write.csv(clusters_means_merged_df, "clusters_means_merged_df_raw_data.csv")
+# 
+# clusters_medians_merged_df <- merge_clusters_with_df(df, clusters_medians)
+# write.csv(clusters_medians_merged_df, "clusters_medians_merged_df_raw_data.csv")
 
 
 clusters_pcr_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_pcr_no_outliers)
@@ -420,11 +481,17 @@ write.csv(clusters_hrp_merged_df_no_outliers, "clusters_hrp_merged_df_no_outlier
 clusters_pfldh_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_pfldh_no_outliers)
 write.csv(clusters_pfldh_merged_df_no_outliers, "clusters_pfldh_merged_df_no_outliers_raw_data.csv")
 
-clusters_means_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_means_no_outliers)
-write.csv(clusters_means_merged_df_no_outliers, "clusters_means_merged_df_no_outliers_raw_data.csv")
+clusters_scaled_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_scaled_no_outliers)
+write.csv(clusters_scaled_merged_df_no_outliers, "clusters_scaled_merged_df_raw_data_no_outliers.csv")
 
-clusters_medians_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_medians_no_outliers)
-write.csv(clusters_medians_merged_df_no_outliers, "clusters_medians_merged_df_no_outliers_raw_data.csv")
+clusters_gm_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_gm_no_outliers)
+write.csv(clusters_gm_merged_df_no_outliers, "clusters_gm_merged_df_raw_data_no_outliers.csv")
+
+# clusters_means_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_means_no_outliers)
+# write.csv(clusters_means_merged_df_no_outliers, "clusters_means_merged_df_no_outliers_raw_data.csv")
+# 
+# clusters_medians_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_medians_no_outliers)
+# write.csv(clusters_medians_merged_df_no_outliers, "clusters_medians_merged_df_no_outliers_raw_data.csv")
 
 
 
