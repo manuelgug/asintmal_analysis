@@ -76,15 +76,15 @@ colnames(scaled_df) <- c("day7", "day14", "day21", "day28")
 
 #log(geometric_mean) BEST!!
 library(psych)
- 
+
 log_geomean <- apply(cbind(log(all_pcr), log(all_hrp), log(all_pfldh)), 1, geometric.mean)
- 
+
 log_gm_df <- data.frame(matrix(nrow = 115, ncol = 4))
 log_gm_df[,1] <- log_geomean[1:115]
 log_gm_df[,2] <- log_geomean[116:230]
 log_gm_df[,3] <- log_geomean[231:345]
 log_gm_df[,4] <- log_geomean[346:460]
- 
+
 rownames(log_gm_df) <- rownames(df)
 colnames(log_gm_df) <- c("day7", "day14", "day21", "day28")
 
@@ -114,7 +114,7 @@ df_pcr_no_outliers <- remove_outliers_multivariate(df_pcr)
 df_hrp_no_outliers <- remove_outliers_multivariate(df_hrp)
 df_pfldh_no_outliers <- remove_outliers_multivariate(df_pfldh)
 scaled_df_no_outliers <- remove_outliers_multivariate(scaled_df)
-gm_df_no_outliers <- remove_outliers_multivariate(gm_df)
+log_gm_df_no_outliers <- remove_outliers_multivariate(log_gm_df)
 # df_means_no_outliers <- remove_outliers_multivariate(df_means)
 # df_medians_no_outliers <- remove_outliers_multivariate(df_medians)
 
@@ -135,8 +135,8 @@ summary_counts_hrp <- summary(counts_hrp)
 counts_scaled <- na.omit(c(scaled_df$day7, scaled_df$day14, scaled_df$day21, scaled_df$day28))
 summary_counts_scaled <- summary(counts_scaled)
 
-counts_gm <- na.omit(c(gm_df$day7, gm_df$day14, gm_df$day21, gm_df$day28))
-summary_counts_gm <- summary(counts_gm)
+counts_log_gm <- na.omit(c(log_gm_df$day7, log_gm_df$day14, log_gm_df$day21, log_gm_df$day28))
+summary_counts_log_gm <- summary(counts_log_gm)
 
 # 
 # counts_means <- na.omit(c(df_means$day7, df_means$day14, df_means$day21, df_means$day28))
@@ -157,8 +157,8 @@ summary_counts_hrp_no_outliers <- summary(counts_hrp_no_outliers)
 counts_scaled_no_outliers <- na.omit(c(scaled_df_no_outliers$day7, scaled_df_no_outliers$day14, scaled_df_no_outliers$day21, scaled_df_no_outliers$day28))
 summary_counts_scaled_no_outliers <- summary(counts_scaled_no_outliers)
 
-counts_gm_no_outliers <- na.omit(c(gm_df_no_outliers$day7, gm_df_no_outliers$day14, gm_df_no_outliers$day21, gm_df_no_outliers$day28))
-summary_counts_gm_no_outliers <- summary(counts_gm_no_outliers)
+counts_log_gm_no_outliers <- na.omit(c(log_gm_df_no_outliers$day7, log_gm_df_no_outliers$day14, log_gm_df_no_outliers$day21, log_gm_df_no_outliers$day28))
+summary_counts_log_gm_no_outliers <- summary(counts_log_gm_no_outliers)
 
 # counts_means_no_outliers <- na.omit(c(df_means_no_outliers$day7, df_means_no_outliers$day14, df_means_no_outliers$day21, df_means_no_outliers$day28))
 # summary_counts_means_no_outliers <- summary(counts_means_no_outliers)
@@ -281,7 +281,7 @@ perform_kmeans_analysis <- function(DF, loga = F) {
   # Save the combined plot as a PNG file with the name of the function input
   filename <- paste(gsub(" ", "_", deparse(substitute(DF))), "_elbow_silhouette_plot", ".png", sep="")
   ggsave(filename, combined_plot, width = 12, height = 6, dpi = 300, bg = "white")
-
+  
   ############33
   
   # Select the optimal number of clusters based on the elbow plot
@@ -454,12 +454,9 @@ write.csv(clusters_pfldh_merged_df_no_outliers, "clusters_pfldh_merged_df_no_out
 clusters_scaled_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_scaled_no_outliers)
 write.csv(clusters_scaled_merged_df_no_outliers, "clusters_scaled_merged_df_raw_data_no_outliers.csv")
 
-clusters_gm_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_gm_no_outliers)
-write.csv(clusters_gm_merged_df_no_outliers, "clusters_gm_merged_df_raw_data_no_outliers.csv")
-                                             
 clusters_log_gm_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_log_gm_no_outliers)
 write.csv(clusters_log_gm_merged_df_no_outliers, "clusters_log_gm_merged_df_raw_data_no_outliers.csv")
-                                        
+
 # clusters_means_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_means_no_outliers)
 # write.csv(clusters_means_merged_df_no_outliers, "clusters_means_merged_df_no_outliers_raw_data.csv")
 # 
