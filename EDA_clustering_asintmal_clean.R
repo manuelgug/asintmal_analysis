@@ -363,6 +363,8 @@ perform_kmeans_analysis <- function(DF, loga = F) {
       ylabel <- c("log(Parasite Density)")
     }
     
+    centers_df_long$Cluster <- factor(centers_df_long$Cluster, levels = unique(centers_df_long$Cluster))
+    
     # Plot the line plot
     line_plot <- ggplot(centers_df_long, aes(x = Variable, y = Value, group = Cluster, color = Cluster)) +
       geom_line(linewidth = 1) +
@@ -393,7 +395,6 @@ perform_kmeans_analysis <- function(DF, loga = F) {
   # Return the elbow plot and the grid plot
   return(df_pchs_corrected)
 }
-
 # perform analysis WITHOUT ANY FORMULA OR TRANSFORMATION (log is for viz of lineplot), ONLY PARASITE COUNTS
 clusters_pcr <- perform_kmeans_analysis(df_pcr, loga =T)
 clusters_hrp <- perform_kmeans_analysis(df_hrp, loga =T)
