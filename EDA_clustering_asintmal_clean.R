@@ -269,10 +269,10 @@ perform_kmeans_analysis <- function(DF, loga = F) {
   for (i in 1:length(k_values)) {
     k <- k_values[i]
     set.seed(69)
-    kmeans_result <- kmeans(df_pchs_corrected, centers = k, nstart = 100)
+    kmeans_result <- kmeans(df_pchs_corrected[, 1:4], centers = k, nstart = 10000, iter.max = 10000)
     wss[i] <- kmeans_result$tot.withinss
     # Calculate silhouette scores
-    sil <- silhouette(kmeans_result$cluster, dist(df_pchs_corrected))
+    sil <- silhouette(kmeans_result$cluster, dist(df_pchs_corrected[, 1:4]))
     avg_sil <- mean(sil[, "sil_width"])
     
     # Store silhouette scores in the dataframe
@@ -301,16 +301,14 @@ perform_kmeans_analysis <- function(DF, loga = F) {
   # Save the combined plot as a PNG file with the name of the function input
   filename <- paste(gsub(" ", "_", deparse(substitute(DF))), "_elbow_silhouette_plot", ".png", sep="")
   ggsave(filename, combined_plot, width = 12, height = 6, dpi = 300, bg = "white")
-  
+
+  ############33
   
   # Select the optimal number of clusters based on the elbow plot
   optimal_k <- 2:12
   
   # Create an empty list to store plots
   plot_list <- list()
-  
-  # Create an empty dataframe to store silhouette scores
-  sil_df <- data.frame(k = numeric(), silhouette = numeric())
   
   # Perform k-means clustering and plot for each optimal k
   for (k in optimal_k) {
@@ -320,15 +318,7 @@ perform_kmeans_analysis <- function(DF, loga = F) {
     
     # Add cluster assignment as a new column to df_pchs_corrected
     df_pchs_corrected[[paste0("cluster_", k)]] <- kmeans_result$cluster
-    
-    wss <- kmeans_result$betweenss / kmeans_result$totss * 100
-    
-    # Calculate silhouette scores
-    sil <- silhouette(kmeans_result$cluster, dist(df_pchs_corrected))
-    avg_sil <- mean(sil[, "sil_width"])
-    
-    # Store silhouette scores in the dataframe
-    sil_df <- rbind(sil_df, data.frame(k = k, silhouette = avg_sil))
+    # wss <- kmeans_result$betweenss / kmeans_result$totss * 100
     
     # Plot kmeans clustering
     kmeans_plot <- fviz_cluster(kmeans_result, data = df_pchs_corrected[, 1:4],
@@ -336,7 +326,7 @@ perform_kmeans_analysis <- function(DF, loga = F) {
                                 geom = "point",
                                 ellipse.type = "convex", 
                                 ggtheme = theme_bw()) +
-      labs(title = paste("Within cluster sum of squares by cluster: =", round(wss, 1), "%"))
+      labs(title = paste("K =", k))
     
     # Convert kmeans_result$centers to a dataframe
     centers_df <- as.data.frame(kmeans_result$centers[,1:4])
@@ -377,7 +367,7 @@ perform_kmeans_analysis <- function(DF, loga = F) {
     line_plot <- ggplot(centers_df_long, aes(x = Variable, y = Value, group = Cluster, color = Cluster)) +
       geom_line(linewidth = 1) +
       scale_color_manual(values = c("pink2", "#00AFBB", "magenta", "orange4", "limegreen", "darkviolet", "red2", "orange", "yellow2", "grey54", "black", "cyan")) +
-      labs(title = paste("Cluster Centers (k =", k, ")"),
+      labs(title = "Cluster Centers",
            x = "",
            y = ylabel) +
       theme_minimal() +
@@ -387,14 +377,10 @@ perform_kmeans_analysis <- function(DF, loga = F) {
       geom_hline(yintercept = ss, color = c("gray76", "gray76", "gray76", "gray76"), linetype = "dashed")+
       annotate("text", y = ss, x = 0.75, label = names(ss))
     
-    # Add silhouette scores to the line plot title
-    line_plot <- line_plot + labs(title = paste("Cluster Centers (k =", k, ") \nAverage Silhouette Width =", round(avg_sil, 2)))
-    
     # Add plots to the list
     plot_list[[length(plot_list) + 1]] <- kmeans_plot
     plot_list[[length(plot_list) + 1]] <- line_plot
   }
-  
   
   # Arrange plots in a grid
   grid_plot <- cowplot::plot_grid(plotlist = plot_list, ncol = 2)
