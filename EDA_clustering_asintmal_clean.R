@@ -74,43 +74,19 @@ scaled_df[,4] <- three_standardized[346:460]
 rownames(scaled_df) <- rownames(df)
 colnames(scaled_df) <- c("day7", "day14", "day21", "day28")
 
-#geometric mean
+#log(geometric_mean) BEST!!
 library(psych)
-
-geometric_mean <- apply(cbind(all_pcr, all_hrp, all_pfldh), 1, geometric.mean)
-
-gm_df <- data.frame(matrix(nrow = 115, ncol = 4))
-gm_df[,1] <- geometric_mean[1:115]
-gm_df[,2] <- geometric_mean[116:230]
-gm_df[,3] <- geometric_mean[231:345]
-gm_df[,4] <- geometric_mean[346:460]
-
-rownames(gm_df) <- rownames(df)
-colnames(gm_df) <- c("day7", "day14", "day21", "day28")
-
-
-# View the dataframe
-
-# means_day7 <- rowMeans(cbind(df_pcr$day7, df_hrp$day7, df_pfldh$day7))
-# means_day14 <- rowMeans(cbind(df_pcr$day14, df_hrp$day14, df_pfldh$day14))
-# means_day21 <- rowMeans(cbind(df_pcr$day21, df_hrp$day21, df_pfldh$day21))
-# means_day28 <- rowMeans(cbind(df_pcr$day28, df_hrp$day28, df_pfldh$day28))
-# 
-# df_means <- as.data.frame(cbind(means_day7, means_day14, means_day21, means_day28))
-# 
-# rownames(df_means) <- rownames(df)
-# colnames(df_means) <- c("day7", "day14", "day21", "day28")
-
-# medians of 3 measurements
-# medians_day7 <- apply(cbind(df_pcr$day7, df_hrp$day7, df_pfldh$day7), 1, median, na.rm = TRUE)
-# medians_day14 <- apply(cbind(df_pcr$day14, df_hrp$day14, df_pfldh$day14), 1, median, na.rm = TRUE)
-# medians_day21 <- apply(cbind(df_pcr$day21, df_hrp$day21, df_pfldh$day21), 1, median, na.rm = TRUE)
-# medians_day28 <- apply(cbind(df_pcr$day28, df_hrp$day28, df_pfldh$day28), 1, median, na.rm = TRUE)
-# 
-# df_medians <- as.data.frame(cbind(medians_day7, medians_day14, medians_day21, medians_day28))
-# 
-# rownames(df_medians) <- rownames(df)
-# colnames(df_medians) <- c("day7", "day14", "day21", "day28")
+ 
+log_geomean <- apply(cbind(log(all_pcr), log(all_hrp), log(all_pfldh)), 1, geometric.mean)
+ 
+log_gm_df <- data.frame(matrix(nrow = 115, ncol = 4))
+log_gm_df[,1] <- log_geomean[1:115]
+log_gm_df[,2] <- log_geomean[116:230]
+log_gm_df[,3] <- log_geomean[231:345]
+log_gm_df[,4] <- log_geomean[346:460]
+ 
+rownames(log_gm_df) <- rownames(df)
+colnames(log_gm_df) <- c("day7", "day14", "day21", "day28")
 
 
 ####################################
@@ -406,7 +382,7 @@ clusters_pfldh <- perform_kmeans_analysis(df_pfldh, loga =T)
 # clusters_means <- perform_kmeans_analysis(df_means, loga =T)
 # clusters_medians <- perform_kmeans_analysis(df_medians, loga =T)
 clusters_scaled <- perform_kmeans_analysis(scaled_df, loga =F)
-clusters_gm <- perform_kmeans_analysis(gm_df, loga =T)
+clusters_log_gm <- perform_kmeans_analysis(log_gm_df, loga =F)
 
 
 clusters_pcr_no_outliers <- perform_kmeans_analysis(df_pcr_no_outliers, loga =T)
@@ -415,7 +391,7 @@ clusters_pfldh_no_outliers <- perform_kmeans_analysis(df_pfldh_no_outliers, loga
 # clusters_means_no_outliers <- perform_kmeans_analysis(df_means_no_outliers, loga =T)
 # clusters_medians_no_outliers <- perform_kmeans_analysis(df_medians_no_outliers, loga =T)
 clusters_scaled_no_outliers <- perform_kmeans_analysis(scaled_df_no_outliers, loga =F)
-clusters_gm_no_outliers <- perform_kmeans_analysis(gm_df_no_outliers, loga =T)
+clusters_log_gm_no_outliers <- perform_kmeans_analysis(log_gm_df_no_outliers, loga =F)
 
 
 
@@ -456,6 +432,9 @@ write.csv(clusters_pfldh_merged_df, "clusters_pfldh_merged_df_raw_data.csv")
 clusters_scaled_merged_df <- merge_clusters_with_df(df, clusters_scaled)
 write.csv(clusters_scaled_merged_df, "clusters_scaled_merged_df_raw_data.csv")
 
+clusters_log_gm_merged_df <- merge_clusters_with_df(df, clusters_log_gm)
+write.csv(clusters_log_gm_merged_df, "clusters_log_gm_merged_df_raw_data.csv")
+
 # clusters_means_merged_df <- merge_clusters_with_df(df, clusters_means)
 # write.csv(clusters_means_merged_df, "clusters_means_merged_df_raw_data.csv")
 # 
@@ -477,7 +456,10 @@ write.csv(clusters_scaled_merged_df_no_outliers, "clusters_scaled_merged_df_raw_
 
 clusters_gm_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_gm_no_outliers)
 write.csv(clusters_gm_merged_df_no_outliers, "clusters_gm_merged_df_raw_data_no_outliers.csv")
-
+                                             
+clusters_log_gm_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_log_gm_no_outliers)
+write.csv(clusters_log_gm_merged_df_no_outliers, "clusters_log_gm_merged_df_raw_data_no_outliers.csv")
+                                        
 # clusters_means_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_means_no_outliers)
 # write.csv(clusters_means_merged_df_no_outliers, "clusters_means_merged_df_no_outliers_raw_data.csv")
 # 
