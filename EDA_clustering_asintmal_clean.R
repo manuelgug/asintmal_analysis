@@ -21,6 +21,10 @@ df <- df[,c(-1:-7)]
 # FORMATING THE DATA
 ###########################
 
+# DATA IMPUTATION BY MEDIAN OF EACH MEASUREMENT FROM EACH VISIT
+df <- df %>%
+  mutate_all(~ ifelse(is.na(.), median(., na.rm = TRUE), .))
+
 # Extracting columns with substrings 'pcr', 'hrp', and 'pfldh'
 pcr_cols <- grep("pcr", names(df), value = TRUE)
 hrp_cols <- grep("hrp", names(df), value = TRUE)
