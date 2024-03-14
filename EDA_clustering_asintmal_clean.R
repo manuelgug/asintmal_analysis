@@ -10,10 +10,29 @@ df <- readxl::read_excel("DB_Manuel_25Feb24.xls")
 df <- as.data.frame(df)
 rownames(df) <- df$asint2
 
-alfredo_labels <- df[,1:7]
+days <- c("day7", "day14", "day21", "day28")
 
-#remove alfredo's labels
-df <- df[,c(-1:-7)]
+##para db de 14 de marzo###
+df <- readxl::read_excel("DB_Manuel_14Marzo2024_days1234.xls", col_names = T)
+df <- as.data.frame(df)
+rownames(df) <- df$asint2
+
+#remove fever samples and column
+df <- df[is.na(df$fever),]
+df <- df[,-1]
+
+# days
+days <- c("day0", "day1", "day2", "day3")
+###########################
+
+colnames(df) <- gsub("den", "pcr", colnames(df))
+
+df <- df[,-1]
+
+# alfredo_labels <- df[,1:7]
+# 
+# #remove alfredo's labels
+# df <- df[,c(-1:-7)]
 
 ###--------------------------------------APPROACH 1: CLUSTERING---------------------------------------------
 
@@ -43,50 +62,54 @@ pfldh_combined <- t(pfldh_combined)
 # Create dataframes from the concatenated matrices
 df_pcr <- as.data.frame(pcr_combined, stringsAsFactors = FALSE)
 rownames(df_pcr) <- rownames(df)
-colnames(df_pcr) <- c("day7", "day14", "day21", "day28")
+colnames(df_pcr) <- days
 df_hrp <- as.data.frame(hrp_combined, stringsAsFactors = FALSE)
 rownames(df_hrp) <- rownames(df)
-colnames(df_hrp) <- c("day7", "day14", "day21", "day28")
+colnames(df_hrp) <- days
 df_pfldh <- as.data.frame(pfldh_combined, stringsAsFactors = FALSE)
 rownames(df_pfldh) <- rownames(df)
-colnames(df_pfldh) <- c("day7", "day14", "day21", "day28")
+colnames(df_pfldh) <- days
 
 # standardize the 3 measurements
-all_pcr <- as.data.frame(c(df_pcr$day7, df_pcr$day14, df_pcr$day21, df_pcr$day28))
+all_pcr <- as.data.frame(c(df_pcr[,1], df_pcr[,2], df_pcr[,3], df_pcr[,4]))
 colnames(all_pcr)[1] <- "all_pcr" 
 all_pcr_scaled <- scale(all_pcr)
-all_hrp <- as.data.frame(c(df_hrp$day7, df_hrp$day14, df_hrp$day21, df_hrp$day28))
+all_hrp <- as.data.frame(c(df_hrp[,1], df_hrp[,2], df_hrp[,3], df_hrp[,4]))
 colnames(all_hrp)[1] <- "all_hrp" 
 all_hrp_scaled <- scale(all_hrp)
-all_pfldh <- as.data.frame(c(df_pfldh$day7, df_pfldh$day14, df_pfldh$day21, df_pfldh$day28))
+all_pfldh <- as.data.frame(c(df_pfldh[,1], df_pfldh[,2], df_pfldh[,3], df_pfldh[,4]))
 colnames(all_pfldh)[1] <- "all_pfldh" 
 all_pfldh_scaled <- scale(all_pfldh)
 
 three_standardized <- rowSums(cbind(all_pcr_scaled, all_hrp_scaled, all_pfldh_scaled))
 
+len <- length(three_standardized)/4
+
 #reorder
-scaled_df <- data.frame(matrix(nrow = 115, ncol = 4))
-scaled_df[,1] <- three_standardized[1:115]
-scaled_df[,2] <- three_standardized[116:230]
-scaled_df[,3] <- three_standardized[231:345]
-scaled_df[,4] <- three_standardized[346:460]
+scaled_df <- data.frame(matrix(nrow = len, ncol = 4))
+scaled_df[,1] <- three_standardized[1:len]
+scaled_df[,2] <- three_standardized[(len + 1):(2 * len)]
+scaled_df[,3] <- three_standardized[(2 * len + 1):(3 * len)]
+scaled_df[,4] <- three_standardized[(3 * len + 1):length(three_standardized)]
 
 rownames(scaled_df) <- rownames(df)
-colnames(scaled_df) <- c("day7", "day14", "day21", "day28")
+colnames(scaled_df) <- days
 
 #log(geometric_mean) BEST!!
 library(psych)
 
 log_geomean <- apply(cbind(log(all_pcr), log(all_hrp), log(all_pfldh)), 1, geometric.mean)
 
-log_gm_df <- data.frame(matrix(nrow = 115, ncol = 4))
-log_gm_df[,1] <- log_geomean[1:115]
-log_gm_df[,2] <- log_geomean[116:230]
-log_gm_df[,3] <- log_geomean[231:345]
-log_gm_df[,4] <- log_geomean[346:460]
+len <- length(log_geomean)/4
+
+log_gm_df <- data.frame(matrix(nrow = len, ncol = 4))
+log_gm_df[,1] <- log_geomean[1:len]
+log_gm_df[,2] <- log_geomean[(len + 1):(2 * len)]
+log_gm_df[,3] <- log_geomean[(2 * len + 1):(3 * len)]
+log_gm_df[,4] <- log_geomean[(3 * len + 1):length(log_geomean)]
 
 rownames(log_gm_df) <- rownames(df)
-colnames(log_gm_df) <- c("day7", "day14", "day21", "day28")
+colnames(log_gm_df) <- days
 
 
 ####################################
@@ -120,64 +143,8 @@ log_gm_df_no_outliers <- remove_outliers_multivariate(log_gm_df)
 
 
 ####################################
-# SUMMARY STATS
-####################################
-
-counts_pfldh <- na.omit(c(df_pfldh$day7,df_pfldh$day14, df_pfldh$day21, df_pfldh$day28))
-summary_counts_pfldh <- summary(counts_pfldh)
-
-counts_pcr <- na.omit(c(df_pcr$day7, df_pcr$day14, df_pcr$day21, df_pcr$day28))
-summary_counts_pcr <- summary(counts_pcr)
-
-counts_hrp <- na.omit(c(df_hrp$day7, df_hrp$day14, df_hrp$day21, df_hrp$day28))
-summary_counts_hrp <- summary(counts_hrp)
-
-counts_scaled <- na.omit(c(scaled_df$day7, scaled_df$day14, scaled_df$day21, scaled_df$day28))
-summary_counts_scaled <- summary(counts_scaled)
-
-counts_log_gm <- na.omit(c(log_gm_df$day7, log_gm_df$day14, log_gm_df$day21, log_gm_df$day28))
-summary_counts_log_gm <- summary(counts_log_gm)
-
-# 
-# counts_means <- na.omit(c(df_means$day7, df_means$day14, df_means$day21, df_means$day28))
-# summary_counts_means <- summary(counts_means)
-# 
-# counts_medians <- na.omit(c(df_medians$day7, df_medians$day14, df_medians$day21, df_medians$day28))
-# summary_counts_medians <- summary(counts_medians)
-
-counts_pfldh_no_outliers <- na.omit(c(df_pfldh_no_outliers$day7, df_pfldh_no_outliers$day14, df_pfldh_no_outliers$day21, df_pfldh_no_outliers$day28))
-summary_counts_pfldh_no_outliers <- summary(counts_pfldh_no_outliers)
-
-counts_pcr_no_outliers <- na.omit(c(df_pcr_no_outliers$day7, df_pcr_no_outliers$day14, df_pcr_no_outliers$day21, df_pcr_no_outliers$day28))
-summary_counts_pcr_no_outliers <- summary(counts_pcr_no_outliers)
-
-counts_hrp_no_outliers <- na.omit(c(df_hrp_no_outliers$day7, df_hrp_no_outliers$day14, df_hrp_no_outliers$day21, df_hrp_no_outliers$day28))
-summary_counts_hrp_no_outliers <- summary(counts_hrp_no_outliers)
-
-counts_scaled_no_outliers <- na.omit(c(scaled_df_no_outliers$day7, scaled_df_no_outliers$day14, scaled_df_no_outliers$day21, scaled_df_no_outliers$day28))
-summary_counts_scaled_no_outliers <- summary(counts_scaled_no_outliers)
-
-counts_log_gm_no_outliers <- na.omit(c(log_gm_df_no_outliers$day7, log_gm_df_no_outliers$day14, log_gm_df_no_outliers$day21, log_gm_df_no_outliers$day28))
-summary_counts_log_gm_no_outliers <- summary(counts_log_gm_no_outliers)
-
-# counts_means_no_outliers <- na.omit(c(df_means_no_outliers$day7, df_means_no_outliers$day14, df_means_no_outliers$day21, df_means_no_outliers$day28))
-# summary_counts_means_no_outliers <- summary(counts_means_no_outliers)
-# 
-# counts_medians_no_outliers <- na.omit(c(df_medians_no_outliers$day7, df_medians_no_outliers$day14, df_medians_no_outliers$day21, df_medians_no_outliers$day28))
-# summary_counts_medians_no_outliers <- summary(counts_medians_no_outliers)
-
-
-
-####################################
 # CORRELATION BETWEN MEASUREMENTS
 ####################################
-
-all_pcr <- as.data.frame(c(df_pcr$day7, df_pcr$day14, df_pcr$day21, df_pcr$day28))
-colnames(all_pcr)[1] <- "all_pcr" 
-all_hrp <- as.data.frame(c(df_hrp$day7, df_hrp$day14, df_hrp$day21, df_hrp$day28))
-colnames(all_hrp)[1] <- "all_hrp" 
-all_pfldh <- as.data.frame(c(df_pfldh$day7, df_pfldh$day14, df_pfldh$day21, df_pfldh$day28))
-colnames(all_pfldh)[1] <- "all_pfldh" 
 
 df_corr <- as.data.frame(cbind(all_pcr = all_pcr$all_pcr, all_hrp= all_hrp$all_hrp, all_pfldh =all_pfldh$all_pfldh))
 
@@ -315,7 +282,7 @@ perform_kmeans_analysis <- function(DF, loga = F) {
     centers_df$Cluster <- rownames(centers_df)
     
     # Define the desired order of variables
-    desired_order <- c("day7", "day14", "day21", "day28")
+    desired_order <- days
     
     # Reshape the dataframe to long format
     centers_df_long <- pivot_longer(centers_df, -Cluster, names_to = "Variable", values_to = "Value")
