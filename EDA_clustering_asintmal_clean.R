@@ -12,18 +12,28 @@ rownames(df) <- df$asint2
 
 days <- c("day7", "day14", "day21", "day28")
 
-##para db de 14 de marzo###
-df <- readxl::read_excel("DB_Manuel_14Marzo2024_days1234.xls", col_names = T)
+#############################para db de 14 de marzo##############################
+df <- readxl::read_excel("DB_Manuel_14Marzo2024_days0123_no_red_x.xls", col_names = T)
 df <- as.data.frame(df)
 rownames(df) <- df$asint2
 
-#remove fever samples and column
-df <- df[is.na(df$fever),]
+#remove fever column
 df <- df[,-1]
 
 # days
 days <- c("day0", "day1", "day2", "day3")
-###########################
+#################################################################################
+
+
+########################### # 5 timepoints ######################################################
+df <- readxl::read_excel("BD_Manuel_15thMarch2024_01234ex.xls")
+df <- as.data.frame(df)
+rownames(df) <- df$asint2
+
+days <- c("day0", "day1", "day2", "day3", "day4")
+
+#################################################################################################
+
 
 colnames(df) <- gsub("den", "pcr", colnames(df))
 
@@ -70,30 +80,33 @@ df_pfldh <- as.data.frame(pfldh_combined, stringsAsFactors = FALSE)
 rownames(df_pfldh) <- rownames(df)
 colnames(df_pfldh) <- days
 
-# standardize the 3 measurements
+#concat each measurement
 all_pcr <- as.data.frame(c(df_pcr[,1], df_pcr[,2], df_pcr[,3], df_pcr[,4]))
-colnames(all_pcr)[1] <- "all_pcr" 
-all_pcr_scaled <- scale(all_pcr)
+colnames(all_pcr)[1] <- "all_pcr"
 all_hrp <- as.data.frame(c(df_hrp[,1], df_hrp[,2], df_hrp[,3], df_hrp[,4]))
-colnames(all_hrp)[1] <- "all_hrp" 
-all_hrp_scaled <- scale(all_hrp)
+colnames(all_hrp)[1] <- "all_hrp"
 all_pfldh <- as.data.frame(c(df_pfldh[,1], df_pfldh[,2], df_pfldh[,3], df_pfldh[,4]))
-colnames(all_pfldh)[1] <- "all_pfldh" 
-all_pfldh_scaled <- scale(all_pfldh)
+colnames(all_pfldh)[1] <- "all_pfldh"
 
-three_standardized <- rowSums(cbind(all_pcr_scaled, all_hrp_scaled, all_pfldh_scaled))
+# # standardize the 3 measurements
+# all_pcr_scaled <- scale(all_pcr)
+# all_hrp_scaled <- scale(all_hrp)
+# all_pfldh_scaled <- scale(all_pfldh)
+# 
+# three_standardized <- rowSums(cbind(all_pcr_scaled, all_hrp_scaled, all_pfldh_scaled))
+# 
+# len <- length(three_standardized)/4
+# 
+# #reorder
+# scaled_df <- data.frame(matrix(nrow = len, ncol = 4))
+# scaled_df[,1] <- three_standardized[1:len]
+# scaled_df[,2] <- three_standardized[(len + 1):(2 * len)]
+# scaled_df[,3] <- three_standardized[(2 * len + 1):(3 * len)]
+# scaled_df[,4] <- three_standardized[(3 * len + 1):length(three_standardized)]
+# 
+# rownames(scaled_df) <- rownames(df)
+# colnames(scaled_df) <- days
 
-len <- length(three_standardized)/4
-
-#reorder
-scaled_df <- data.frame(matrix(nrow = len, ncol = 4))
-scaled_df[,1] <- three_standardized[1:len]
-scaled_df[,2] <- three_standardized[(len + 1):(2 * len)]
-scaled_df[,3] <- three_standardized[(2 * len + 1):(3 * len)]
-scaled_df[,4] <- three_standardized[(3 * len + 1):length(three_standardized)]
-
-rownames(scaled_df) <- rownames(df)
-colnames(scaled_df) <- days
 
 #log(geometric_mean) BEST!!
 library(psych)
@@ -110,6 +123,33 @@ log_gm_df[,4] <- log_geomean[(3 * len + 1):length(log_geomean)]
 
 rownames(log_gm_df) <- rownames(df)
 colnames(log_gm_df) <- days
+
+
+########################################### for 5 columns ###########################################
+library(psych)
+
+all_pcr <- as.data.frame(c(df_pcr[,1], df_pcr[,2], df_pcr[,3], df_pcr[,4],  df_pcr[,5]))
+colnames(all_pcr)[1] <- "all_pcr"
+all_hrp <- as.data.frame(c(df_hrp[,1], df_hrp[,2], df_hrp[,3], df_hrp[,4], df_hrp[,5]))
+colnames(all_hrp)[1] <- "all_hrp"
+all_pfldh <- as.data.frame(c(df_pfldh[,1], df_pfldh[,2], df_pfldh[,3], df_pfldh[,4], df_pfldh[,5]))
+colnames(all_pfldh)[1] <- "all_pfldh"
+
+log_geomean <- apply(cbind(log(all_pcr), log(all_hrp), log(all_pfldh)), 1, geometric.mean)
+
+len <- length(log_geomean)/5
+
+log_gm_df <- data.frame(matrix(nrow = len, ncol = 5))
+log_gm_df[,1] <- log_geomean[1:len]
+log_gm_df[,2] <- log_geomean[(len + 1):(2 * len)]
+log_gm_df[,3] <- log_geomean[(2 * len + 1):(3 * len)]
+log_gm_df[,4] <- log_geomean[(3 * len + 1):(4 * len)]
+log_gm_df[,5] <- log_geomean[(4 * len + 1):length(log_geomean)]
+
+rownames(log_gm_df) <- rownames(df)
+colnames(log_gm_df) <- days
+######################################################################################################
+
 
 
 ####################################
@@ -133,10 +173,10 @@ remove_outliers_multivariate <- function(df) {
 }
 
 # remove outliers
-df_pcr_no_outliers <- remove_outliers_multivariate(df_pcr)
-df_hrp_no_outliers <- remove_outliers_multivariate(df_hrp)
-df_pfldh_no_outliers <- remove_outliers_multivariate(df_pfldh)
-scaled_df_no_outliers <- remove_outliers_multivariate(scaled_df)
+# df_pcr_no_outliers <- remove_outliers_multivariate(df_pcr)
+# df_hrp_no_outliers <- remove_outliers_multivariate(df_hrp)
+# df_pfldh_no_outliers <- remove_outliers_multivariate(df_pfldh)
+# scaled_df_no_outliers <- remove_outliers_multivariate(scaled_df)
 log_gm_df_no_outliers <- remove_outliers_multivariate(log_gm_df)
 # df_means_no_outliers <- remove_outliers_multivariate(df_means)
 # df_medians_no_outliers <- remove_outliers_multivariate(df_medians)
@@ -145,57 +185,57 @@ log_gm_df_no_outliers <- remove_outliers_multivariate(log_gm_df)
 ####################################
 # CORRELATION BETWEN MEASUREMENTS
 ####################################
-
-df_corr <- as.data.frame(cbind(all_pcr = all_pcr$all_pcr, all_hrp= all_hrp$all_hrp, all_pfldh =all_pfldh$all_pfldh))
-
-
-# Define a function to calculate correlation and create scatterplot with correlation value
-draw_scatterplot <- function(x, y, df, scale_data = FALSE) {
-  
-  # Filter out rows with NA or 0
-  filtered_df <- df[complete.cases(df[x], df[y]) & df[x] != 0 & df[y] != 0, ]
-  
-  # transform the data
-  if (scale_data) {
-    filtered_df[[x]] <- log10(filtered_df[[x]])
-    filtered_df[[y]] <- log10(filtered_df[[y]])
-  }
-  
-  # Calculate correlation
-  corr <- cor(filtered_df[[x]], filtered_df[[y]])
-  
-  # Create scatterplot
-  p <- ggplot(filtered_df, aes_string(x = x, y = y)) +
-    geom_point() +
-    geom_text(aes(label = paste("Correlation =", round(corr, 2)), x = Inf, y = -Inf),
-              hjust = 1, vjust = 0, size = 4) +
-    labs(title = paste(x, "vs", y))+
-    theme_minimal()
-  
-  return(p)
-}
-
-# Create scatterplots for each pair of columns
-plot_pcr_hrp <- draw_scatterplot("all_pcr", "all_hrp", df_corr, scale_data = TRUE)
-plot_pcr_pfldh <- draw_scatterplot("all_pcr", "all_pfldh", df_corr, scale_data = TRUE)
-plot_hrp_pfldh <- draw_scatterplot("all_hrp", "all_pfldh", df_corr, scale_data = TRUE)
-
-# Create the plot list by concatenating the plots
-plot_list <- list(plot_pcr_hrp, plot_pcr_pfldh, plot_hrp_pfldh)
-
-# Arrange plots in a grid
-grid_plot <- cowplot::plot_grid(plotlist = plot_list, ncol = 1)
-
-# # Save the grid plot as a PNG file with the name of the function input
-ggsave("metrics_correlations.png", grid_plot, width = 10, height = 16, dpi = 300, bg ="white")
-
+# 
+# df_corr <- as.data.frame(cbind(all_pcr = all_pcr$all_pcr, all_hrp= all_hrp$all_hrp, all_pfldh =all_pfldh$all_pfldh))
+# 
+# 
+# # Define a function to calculate correlation and create scatterplot with correlation value
+# draw_scatterplot <- function(x, y, df, scale_data = FALSE) {
+#   
+#   # Filter out rows with NA or 0
+#   filtered_df <- df[complete.cases(df[x], df[y]) & df[x] != 0 & df[y] != 0, ]
+#   
+#   # transform the data
+#   if (scale_data) {
+#     filtered_df[[x]] <- log10(filtered_df[[x]])
+#     filtered_df[[y]] <- log10(filtered_df[[y]])
+#   }
+#   
+#   # Calculate correlation
+#   corr <- cor(filtered_df[[x]], filtered_df[[y]])
+#   
+#   # Create scatterplot
+#   p <- ggplot(filtered_df, aes_string(x = x, y = y)) +
+#     geom_point() +
+#     geom_text(aes(label = paste("Correlation =", round(corr, 2)), x = Inf, y = -Inf),
+#               hjust = 1, vjust = 0, size = 4) +
+#     labs(title = paste(x, "vs", y))+
+#     theme_minimal()
+#   
+#   return(p)
+# }
+# 
+# # Create scatterplots for each pair of columns
+# plot_pcr_hrp <- draw_scatterplot("all_pcr", "all_hrp", df_corr, scale_data = TRUE)
+# plot_pcr_pfldh <- draw_scatterplot("all_pcr", "all_pfldh", df_corr, scale_data = TRUE)
+# plot_hrp_pfldh <- draw_scatterplot("all_hrp", "all_pfldh", df_corr, scale_data = TRUE)
+# 
+# # Create the plot list by concatenating the plots
+# plot_list <- list(plot_pcr_hrp, plot_pcr_pfldh, plot_hrp_pfldh)
+# 
+# # Arrange plots in a grid
+# grid_plot <- cowplot::plot_grid(plotlist = plot_list, ncol = 1)
+# 
+# # # Save the grid plot as a PNG file with the name of the function input
+# ggsave("metrics_correlations.png", grid_plot, width = 10, height = 16, dpi = 300, bg ="white")
+# 
 
 ####################################
 # CLSUTERING ANALYSIS
 ####################################
 
 ## FULL KMEANS ANALYSIS
-perform_kmeans_analysis <- function(DF, loga = F) {
+perform_kmeans_analysis <- function(DF, loga = F, timepoints = 4) {
   # Remove NA rows
   df_pchs_complete_cases <- DF[complete.cases(DF),]
   
@@ -216,10 +256,10 @@ perform_kmeans_analysis <- function(DF, loga = F) {
   for (i in 1:length(k_values)) {
     k <- k_values[i]
     set.seed(69)
-    kmeans_result <- kmeans(df_pchs_corrected[, 1:4], centers = k, nstart = 10000, iter.max = 10000)
+    kmeans_result <- kmeans(df_pchs_corrected[, 1:timepoints], centers = k, nstart = 10000, iter.max = 10000)
     wss[i] <- kmeans_result$tot.withinss
     # Calculate silhouette scores
-    sil <- silhouette(kmeans_result$cluster, dist(df_pchs_corrected[, 1:4]))
+    sil <- silhouette(kmeans_result$cluster, dist(df_pchs_corrected[, 1:timepoints]))
     avg_sil <- mean(sil[, "sil_width"])
     
     # Store silhouette scores in the dataframe
@@ -268,7 +308,7 @@ perform_kmeans_analysis <- function(DF, loga = F) {
     # wss <- kmeans_result$betweenss / kmeans_result$totss * 100
     
     # Plot kmeans clustering
-    kmeans_plot <- fviz_cluster(kmeans_result, data = df_pchs_corrected[, 1:4],
+    kmeans_plot <- fviz_cluster(kmeans_result, data = df_pchs_corrected[, 1:timepoints],
                                 palette = c("pink2", "#00AFBB", "magenta", "orange4", "limegreen", "darkviolet", "red2", "orange", "yellow2", "grey54", "black", "cyan"), 
                                 geom = "point",
                                 ellipse.type = "convex", 
@@ -276,7 +316,7 @@ perform_kmeans_analysis <- function(DF, loga = F) {
       labs(title = paste("K =", k))
     
     # Convert kmeans_result$centers to a dataframe
-    centers_df <- as.data.frame(kmeans_result$centers[,1:4])
+    centers_df <- as.data.frame(kmeans_result$centers[,1:timepoints])
     
     # Add cluster numbers as a column
     centers_df$Cluster <- rownames(centers_df)
@@ -343,22 +383,22 @@ perform_kmeans_analysis <- function(DF, loga = F) {
   return(df_pchs_corrected)
 }
 # perform analysis WITHOUT ANY FORMULA OR TRANSFORMATION (log is for viz of lineplot), ONLY PARASITE COUNTS
-clusters_pcr <- perform_kmeans_analysis(df_pcr, loga =T)
-clusters_hrp <- perform_kmeans_analysis(df_hrp, loga =T)
-clusters_pfldh <- perform_kmeans_analysis(df_pfldh, loga =T)
+# clusters_pcr <- perform_kmeans_analysis(df_pcr, loga =T)
+# clusters_hrp <- perform_kmeans_analysis(df_hrp, loga =T)
+# clusters_pfldh <- perform_kmeans_analysis(df_pfldh, loga =T)
 # clusters_means <- perform_kmeans_analysis(df_means, loga =T)
 # clusters_medians <- perform_kmeans_analysis(df_medians, loga =T)
-clusters_scaled <- perform_kmeans_analysis(scaled_df, loga =F)
-clusters_log_gm <- perform_kmeans_analysis(log_gm_df, loga =F)
+# clusters_scaled <- perform_kmeans_analysis(scaled_df, loga =F)
+clusters_log_gm <- perform_kmeans_analysis(log_gm_df, loga =F, timepoints = 5)
 
 
-clusters_pcr_no_outliers <- perform_kmeans_analysis(df_pcr_no_outliers, loga =T)
-clusters_hrp_no_outliers <- perform_kmeans_analysis(df_hrp_no_outliers, loga =T)
-clusters_pfldh_no_outliers <- perform_kmeans_analysis(df_pfldh_no_outliers, loga =T)
+# clusters_pcr_no_outliers <- perform_kmeans_analysis(df_pcr_no_outliers, loga =T)
+# clusters_hrp_no_outliers <- perform_kmeans_analysis(df_hrp_no_outliers, loga =T)
+# clusters_pfldh_no_outliers <- perform_kmeans_analysis(df_pfldh_no_outliers, loga =T)
 # clusters_means_no_outliers <- perform_kmeans_analysis(df_means_no_outliers, loga =T)
 # clusters_medians_no_outliers <- perform_kmeans_analysis(df_medians_no_outliers, loga =T)
-clusters_scaled_no_outliers <- perform_kmeans_analysis(scaled_df_no_outliers, loga =F)
-clusters_log_gm_no_outliers <- perform_kmeans_analysis(log_gm_df_no_outliers, loga =F)
+# clusters_scaled_no_outliers <- perform_kmeans_analysis(scaled_df_no_outliers, loga =F)
+clusters_log_gm_no_outliers <- perform_kmeans_analysis(log_gm_df_no_outliers, loga =F, timepoints = 5)
 
 
 
@@ -386,18 +426,18 @@ merge_clusters_with_df <- function(df, clusters_pcr) {
   return(merged_df)
 }
 
-# output cluster labels for each sample
-clusters_pcr_merged_df <- merge_clusters_with_df(df, clusters_pcr)
-write.csv(clusters_pcr_merged_df, "clusters_pcr_merged_df_raw_data.csv")
-
-clusters_hrp_merged_df <- merge_clusters_with_df(df, clusters_hrp)
-write.csv(clusters_hrp_merged_df, "clusters_hrp_merged_df_raw_data.csv")
-
-clusters_pfldh_merged_df <- merge_clusters_with_df(df, clusters_pfldh)
-write.csv(clusters_pfldh_merged_df, "clusters_pfldh_merged_df_raw_data.csv")
-
-clusters_scaled_merged_df <- merge_clusters_with_df(df, clusters_scaled)
-write.csv(clusters_scaled_merged_df, "clusters_scaled_merged_df_raw_data.csv")
+# # output cluster labels for each sample
+# clusters_pcr_merged_df <- merge_clusters_with_df(df, clusters_pcr)
+# write.csv(clusters_pcr_merged_df, "clusters_pcr_merged_df_raw_data.csv")
+# 
+# clusters_hrp_merged_df <- merge_clusters_with_df(df, clusters_hrp)
+# write.csv(clusters_hrp_merged_df, "clusters_hrp_merged_df_raw_data.csv")
+# 
+# clusters_pfldh_merged_df <- merge_clusters_with_df(df, clusters_pfldh)
+# write.csv(clusters_pfldh_merged_df, "clusters_pfldh_merged_df_raw_data.csv")
+# 
+# clusters_scaled_merged_df <- merge_clusters_with_df(df, clusters_scaled)
+# write.csv(clusters_scaled_merged_df, "clusters_scaled_merged_df_raw_data.csv")
 
 clusters_log_gm_merged_df <- merge_clusters_with_df(df, clusters_log_gm)
 write.csv(clusters_log_gm_merged_df, "clusters_log_gm_merged_df_raw_data.csv")
@@ -409,17 +449,17 @@ write.csv(clusters_log_gm_merged_df, "clusters_log_gm_merged_df_raw_data.csv")
 # write.csv(clusters_medians_merged_df, "clusters_medians_merged_df_raw_data.csv")
 
 
-clusters_pcr_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_pcr_no_outliers)
-write.csv(clusters_pcr_merged_df_no_outliers, "clusters_pcr_merged_df_no_outliers_raw_data.csv")
-
-clusters_hrp_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_hrp_no_outliers)
-write.csv(clusters_hrp_merged_df_no_outliers, "clusters_hrp_merged_df_no_outliers_raw_data.csv")
-
-clusters_pfldh_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_pfldh_no_outliers)
-write.csv(clusters_pfldh_merged_df_no_outliers, "clusters_pfldh_merged_df_no_outliers_raw_data.csv")
-
-clusters_scaled_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_scaled_no_outliers)
-write.csv(clusters_scaled_merged_df_no_outliers, "clusters_scaled_merged_df_raw_data_no_outliers.csv")
+# clusters_pcr_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_pcr_no_outliers)
+# write.csv(clusters_pcr_merged_df_no_outliers, "clusters_pcr_merged_df_no_outliers_raw_data.csv")
+# 
+# clusters_hrp_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_hrp_no_outliers)
+# write.csv(clusters_hrp_merged_df_no_outliers, "clusters_hrp_merged_df_no_outliers_raw_data.csv")
+# 
+# clusters_pfldh_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_pfldh_no_outliers)
+# write.csv(clusters_pfldh_merged_df_no_outliers, "clusters_pfldh_merged_df_no_outliers_raw_data.csv")
+# 
+# clusters_scaled_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_scaled_no_outliers)
+# write.csv(clusters_scaled_merged_df_no_outliers, "clusters_scaled_merged_df_raw_data_no_outliers.csv")
 
 clusters_log_gm_merged_df_no_outliers <- merge_clusters_with_df(df, clusters_log_gm_no_outliers)
 write.csv(clusters_log_gm_merged_df_no_outliers, "clusters_log_gm_merged_df_raw_data_no_outliers.csv")
